@@ -1,0 +1,13 @@
+# Node modules
+node_modules/
+
+# Build artefacts
+dist/
+*.local
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# VS Code settings
+.vscode/

@@ -1,0 +1,22 @@
+{
+  "name": "sentinel-system",
+  "version": "1.0.0",
+  "description": "Sentinel: A Privacy-Preserving Multi-Agent Situational Awareness System for Smart Campuses",
+  "scripts": {
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "build:server": "npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "build": "npm run build:server && npm run build:client"
+  },
+  "keywords": [
+    "sentinel",
+    "situational-awareness",
+    "multi-agent",
+    "hackathon",
+    "digital-twin",
+    "privacy-preserving"
+  ],
+  "author": "Sentinel Core Team",
+  "license": "Apache-2.0"
+}
