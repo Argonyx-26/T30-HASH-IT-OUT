@@ -12,14 +12,14 @@ import {
   Settings,
   Sun,
   Moon,
-  Wifi,
+  Radio,
   Menu,
   X
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
-  const { state, connected } = useSimulation();
+  const { state } = useSimulation();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-lg bg-sentinel-accent flex items-center justify-center shadow-lg shadow-sentinel-accent/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sentinel-accent to-blue-600 flex items-center justify-center shadow-lg shadow-sentinel-accent/20 group-hover:scale-105 transition-transform">
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
@@ -84,19 +84,23 @@ export const Navbar: React.FC = () => {
 
           {/* Right Status Indicators & Quick Actions */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Core connection status */}
-            <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-mono ${connected
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-300'
-              }`}>
-              <Wifi className="w-3 h-3" />
-              <span className="font-semibold tracking-wide">{connected ? 'CORE ONLINE' : 'CONNECTING'}</span>
+            {/* Simulation Mode Indicator */}
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono">
+              <Radio className="w-3 h-3 animate-pulse" />
+              <span className="font-semibold tracking-wide">SIMULATION MODE</span>
             </div>
 
             {/* Online Sources Count */}
-            <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-md bg-sentinel-surface border border-sentinel-border text-xs font-mono text-slate-300">
-              <span className="text-slate-500">SIM</span>
-              <span className="font-bold text-sentinel-accent">{state.currentSimulatedClock}</span>
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sentinel-surface border border-sentinel-border text-xs font-mono text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{state.sourcesOnline} / {state.totalSources} ONLINE</span>
+            </div>
+
+            {/* Simulated Dynamic Clock */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs font-mono text-sentinel-accent">
+              <span className="text-slate-500 text-[10px]">SIM TIME</span>
+              <span className="font-bold text-sm tracking-wider">{state.currentSimulatedClock}</span>
+              <span className="text-[10px] text-slate-400 px-1 rounded bg-slate-800 font-bold">{state.speed}x</span>
             </div>
 
             {/* Theme Toggle */}
@@ -141,9 +145,7 @@ export const Navbar: React.FC = () => {
             );
           })}
           <div className="pt-2 border-t border-sentinel-border flex items-center justify-between">
-            <span className={`text-xs font-mono font-bold ${connected ? 'text-emerald-300' : 'text-amber-300'}`}>
-              {connected ? 'CORE ONLINE' : 'CONNECTING'}
-            </span>
+            <span className="text-xs font-mono text-amber-400 font-bold">● SIMULATION MODE</span>
             <button
               onClick={toggleTheme}
               className="flex items-center gap-2 text-xs font-mono text-slate-400"

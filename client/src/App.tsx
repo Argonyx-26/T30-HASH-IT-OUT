@@ -35,15 +35,17 @@ export const App: React.FC = () => {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-sentinel-border/70 bg-sentinel-card/70 py-5 text-xs font-mono text-slate-400">
+            <footer className="border-t border-sentinel-border bg-sentinel-card py-6 text-xs font-mono text-slate-400">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-200">SENTINEL</span>
-                  <span className="text-slate-600">/</span>
-                  <span>Situational awareness platform</span>
+                  <span>&bull;</span>
+                  <span>Privacy-Preserving Multi-Agent Situational Awareness</span>
                 </div>
                 <div className="flex items-center gap-4 text-[11px] text-slate-500">
-                  <span>AI recommends, humans decide</span>
+                  <span>DIGITAL TWIN SIMULATION MODE</span>
+                  <span>&bull;</span>
+                  <span>AI RECOMMENDS, HUMANS DECIDE</span>
                 </div>
               </div>
             </footer>
