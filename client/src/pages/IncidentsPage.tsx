@@ -18,6 +18,11 @@ export const IncidentsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  const handleDelete = async (incidentId: string) => {
+    if (!window.confirm('Delete this incident and its related records?')) return;
+    await deleteIncident(incidentId);
+  };
+
   const filteredIncidents = incidents.filter(inc => {
     const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,8 +114,9 @@ export const IncidentsPage: React.FC = () => {
               <div className="mt-4 pt-3 border-t border-sentinel-border/60 flex items-center justify-between">
                 <span className="text-[10px] font-mono text-slate-500 uppercase">Category: {inc.category.replace('_', ' ')}</span>
                 <div className="flex items-center gap-3">
-                  <button onClick={() => deleteIncident(inc.id)} className="p-1.5 rounded text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors" title="Delete incident and related records">
+                  <button type="button" onClick={() => handleDelete(inc.id)} className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono uppercase text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors" title="Delete incident and related records">
                     <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
                   </button>
                   <Link to={`/incidents/${inc.id}`} className="flex items-center gap-1 text-xs font-mono font-bold text-sentinel-accent hover:text-cyan-300">
                     <span>Open Dossier</span><ArrowRight className="w-3.5 h-3.5" />
