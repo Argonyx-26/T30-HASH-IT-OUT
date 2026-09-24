@@ -26,13 +26,12 @@ interface SimulationContextType {
   agents: AgentDefinition[];
   connected: boolean;
   // Controls
-  startScenario: (scenarioId: string, isJudgeDemo?: boolean) => void;
+  startScenario: (scenarioId: string) => void;
   addEvent: (event: SafetyEventSubmission) => void;
   pauseSimulation: () => void;
   resumeSimulation: () => void;
   resetSimulation: () => void;
   setSpeed: (speed: number) => void;
-  launchJudgeDemo: () => void;
   acknowledgeIncident: (incidentId: string) => void;
   resolveIncident: (incidentId: string, note?: string) => void;
   addOperatorNote: (incidentId: string, note: string) => void;
@@ -186,14 +185,14 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
-  const startScenario = (scenarioId: string, isJudgeDemo = false) => {
+  const startScenario = (scenarioId: string) => {
     if (socket) {
-      socket.emit('simulation.start', { scenarioId, isJudgeDemo });
+      socket.emit('simulation.start', { scenarioId });
     } else {
       fetch(`${BACKEND_URL}/api/simulation/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenarioId, isJudgeDemo })
+        body: JSON.stringify({ scenarioId })
       }).then(r => r.json()).then(setState);
     }
   };
@@ -238,10 +237,6 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ speed })
     });
-  };
-
-  const launchJudgeDemo = () => {
-    startScenario('scenario-fire-science-annex', true);
   };
 
   const acknowledgeIncident = (incidentId: string) => {
@@ -311,7 +306,6 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       resumeSimulation,
       resetSimulation,
       setSpeed,
-      launchJudgeDemo,
       acknowledgeIncident,
       resolveIncident,
       addOperatorNote,

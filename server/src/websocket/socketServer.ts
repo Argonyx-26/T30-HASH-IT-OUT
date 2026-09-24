@@ -27,7 +27,7 @@ export class SocketServer {
       // Operator client commands over WebSocket
       socket.on('simulation.start', (data) => {
         if (!data?.scenarioId) return;
-        const state = this.engine.startScenario(data.scenarioId, Boolean(data.isJudgeDemo), true);
+        const state = this.engine.startScenario(data.scenarioId, false, true);
         if (state.scenarioId) this.io.emit('simulation.state', state);
       });
 
