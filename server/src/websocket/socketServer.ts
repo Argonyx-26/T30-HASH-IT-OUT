@@ -89,10 +89,17 @@ export class SocketServer {
       });
 
       socket.on('operator.deleteIncident', async (data) => {
-        const deleted = await this.engine.deleteIncident(data.incidentId);
-        if (deleted) {
-          this.io.emit('incidents.list', this.engine.getIncidents());
-          this.io.emit('events.list', this.engine.getActiveEvents());
+        try {
+          const deleted = await this.engine.deleteIncident(data.incidentId);
+          if (deleted) {
+            this.io.emit('incidents.list', this.engine.getIncidents());
+            this.io.emit('events.list', this.engine.getActiveEvents());
+          }
+        } catch (error) {
+          socket.emit('operator.deleteIncident.error', {
+            incidentId: data.incidentId,
+            message: error instanceof Error ? error.message : 'Incident deletion failed'
+          });
         }
       });
     });

@@ -61,6 +61,8 @@ export class SupabaseRestClient {
       throw new Error(`Supabase request failed (${response.status}): ${await response.text()}`);
     }
 
-    return response.json() as Promise<T>;
+    const responseText = await response.text();
+    if (!responseText) return undefined as T;
+    return JSON.parse(responseText) as T;
   }
 }
