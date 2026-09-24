@@ -3,7 +3,10 @@ import { useSimulation } from '../context/SimulationContext';
 import { CampusMap } from '../components/CampusMap';
 import { EventTimeline } from '../components/EventTimeline';
 import {
+  Play,
+  Pause,
   RotateCcw,
+  Zap,
   Radio,
   Flame,
   ShieldAlert,
@@ -18,7 +21,11 @@ export const SimulationPage: React.FC = () => {
     scenarios,
     events,
     startScenario,
-    resetSimulation
+    pauseSimulation,
+    resumeSimulation,
+    resetSimulation,
+    setSpeed,
+    launchJudgeDemo
   } = useSimulation();
 
   const progressPercent = Math.min(100, Math.round((state.elapsedSeconds / Math.max(1, state.totalDuration)) * 100));
@@ -52,7 +59,13 @@ export const SimulationPage: React.FC = () => {
           </p>
         </div>
 
-        <span className="text-[10px] font-mono uppercase text-slate-500">Backend replay mode</span>
+        <button
+          onClick={launchJudgeDemo}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+        >
+          <Zap className="w-4 h-4 fill-current" />
+          <span>Launch Judge Demo</span>
+        </button>
       </div>
 
       {/* Replay Control Bar */}
@@ -83,6 +96,39 @@ export const SimulationPage: React.FC = () => {
             >
               <RotateCcw className="w-4 h-4" />
             </button>
+
+            {state.isRunning && !state.isPaused ? (
+              <button
+                onClick={pauseSimulation}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <Pause className="w-4 h-4 fill-current" />
+                <span>Pause</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => state.isPaused ? resumeSimulation() : startScenario(state.scenarioId)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sentinel-accent hover:bg-cyan-300 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>{state.isPaused ? 'Resume' : 'Play Scenario'}</span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 bg-sentinel-surface p-1 rounded-lg border border-sentinel-border text-xs font-mono ml-2">
+              {[1, 2, 5, 10].map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => setSpeed(speed)}
+                  className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${state.speed === speed
+                    ? 'bg-sentinel-accent text-slate-950 font-bold'
+                    : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
 
           </div>
 
