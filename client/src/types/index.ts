@@ -1,9 +1,9 @@
-export type EventSourceType = 
-  | 'building_system' 
-  | 'sensor' 
-  | 'operator_report' 
-  | 'alarm_panel' 
-  | 'access_control' 
+export type EventSourceType =
+  | 'building_system'
+  | 'sensor'
+  | 'operator_report'
+  | 'alarm_panel'
+  | 'access_control'
   | 'vision_optical';
 
 export type EventSeverity = 'low' | 'medium' | 'high' | 'critical';
@@ -19,21 +19,25 @@ export interface SafetyEvent {
   relativeTime: number;
   timestamp: string;
   simulatedClock: string;
-  eventType: 
-    | 'thermal_anomaly' 
-    | 'smoke_report' 
-    | 'manual_alarm' 
-    | 'access_violation' 
-    | 'crowd_anomaly' 
-    | 'equipment_overheat' 
-    | 'dust_spike'
-    | 'perimeter_motion';
+  eventType:
+  | 'thermal_anomaly'
+  | 'smoke_report'
+  | 'manual_alarm'
+  | 'access_violation'
+  | 'crowd_anomaly'
+  | 'equipment_overheat'
+  | 'dust_spike'
+  | 'perimeter_motion';
   severity: EventSeverity;
   confidence: number;
   evidence: string;
   evidenceCategory: 'confirmed' | 'supporting' | 'unknown';
   metadata?: Record<string, any>;
 }
+
+export type SafetyEventSubmission = Pick<SafetyEvent,
+  'source' | 'sourceType' | 'zone' | 'location' | 'eventType' | 'severity' | 'confidence' | 'evidence' | 'evidenceCategory'
+> & { metadata?: Record<string, any> };
 
 export interface ConfidenceStep {
   relativeTime: number;
@@ -72,6 +76,18 @@ export interface IncidentExplanation {
   whatIsUncertain: string;
   whatWouldChangeAssessment: string;
   agentContributions: AgentContribution[];
+}
+
+export interface IncidentMetrics {
+  relatedSourceCount: number;
+  sourceTypes: string[];
+  evidenceCompletenessPercent: number;
+  sourceAgreementPercent: number;
+  smokePercentage: number;
+  thermalRiskPercentage: number;
+  accessRiskPercentage: number;
+  crowdRiskPercentage: number;
+  equipmentRiskPercentage: number;
 }
 
 export interface RecommendedStep {
@@ -120,6 +136,7 @@ export interface Incident {
   summary: string;
   eventIds: string[];
   events: SafetyEvent[];
+  metrics: IncidentMetrics;
   evidenceSummary: {
     confirmed: EvidenceItem[];
     supporting: EvidenceItem[];
@@ -194,6 +211,16 @@ export interface AnalyticsMetrics {
     alertCount: number;
     incidentCount: number;
     status: 'nominal' | 'watch' | 'elevated' | 'critical';
+  }>;
+  incidentBreakdown: Array<{
+    incidentId: string;
+    title: string;
+    sourceCount: number;
+    sourceTypes: string[];
+    confidence: number;
+    evidenceCompletenessPercent: number;
+    smokePercentage: number;
+    status: IncidentStatus;
   }>;
 }
 

@@ -2,34 +2,33 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSimulation } from '../context/SimulationContext';
 import { StatusBadge } from '../components/StatusBadge';
-import { 
-  Layers, 
-  Search, 
-  Filter, 
-  ExternalLink, 
-  ShieldAlert, 
-  CheckCircle, 
-  Zap, 
-  ArrowRight, 
-  Calendar 
+import {
+  Layers,
+  Search,
+  Filter,
+  ExternalLink,
+  ShieldAlert,
+  CheckCircle,
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 
 export const IncidentsPage: React.FC = () => {
-  const { incidents, launchJudgeDemo } = useSimulation();
+  const { incidents, deleteIncident } = useSimulation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredIncidents = incidents.filter(inc => {
     const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          inc.zone.toLowerCase().includes(searchTerm.toLowerCase());
+      inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inc.zone.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || inc.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sentinel-border">
         <div>
@@ -42,13 +41,9 @@ export const IncidentsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={launchJudgeDemo}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer"
-        >
-          <Zap className="w-3.5 h-3.5 fill-current" />
-          <span>Launch Fire Incident Demo</span>
-        </button>
+        <Link to="/simulation" className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sentinel-accent text-slate-950 font-mono font-bold text-xs uppercase tracking-wider">
+          <span>Create Scenario</span>
+        </Link>
       </div>
 
       {/* Search & Filter Controls */}
@@ -71,11 +66,10 @@ export const IncidentsPage: React.FC = () => {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1 rounded capitalize transition-colors cursor-pointer ${
-                statusFilter === s
-                  ? 'bg-sentinel-accent text-slate-950 font-bold'
-                  : 'bg-sentinel-surface text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded capitalize transition-colors cursor-pointer ${statusFilter === s
+                ? 'bg-sentinel-accent text-slate-950 font-bold'
+                : 'bg-sentinel-surface text-slate-400 hover:text-white'
+                }`}
             >
               {s}
             </button>
@@ -87,68 +81,41 @@ export const IncidentsPage: React.FC = () => {
       {filteredIncidents.length === 0 ? (
         <div className="p-12 rounded-2xl bg-sentinel-card border border-sentinel-border text-center space-y-3">
           <ShieldAlert className="w-10 h-10 text-slate-600 mx-auto" />
-          <h3 className="font-mono text-base font-bold text-slate-300">
-            No Incidents Found
-          </h3>
+          <h3 className="font-mono text-base font-bold text-slate-300">No Incidents Found</h3>
           <p className="text-xs text-slate-500 font-sans max-w-sm mx-auto">
-            No incidents match your filter. Run a simulation scenario or judge demo to generate correlated incidents.
+            No incidents match your filter. Start a synthetic sensor scenario to generate incidents.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredIncidents.map((inc) => (
-            <div
-              key={inc.id}
-              className="p-5 rounded-2xl bg-sentinel-card border border-sentinel-border hover:border-sentinel-accent/60 transition-all duration-200 flex flex-col justify-between group shadow-lg"
-            >
+            <div key={inc.id} className="p-5 rounded-2xl bg-sentinel-card border border-sentinel-border hover:border-sentinel-accent/60 transition-all duration-200 flex flex-col justify-between group shadow-lg">
               <div className="space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-sentinel-border/50">
-                  <span className="font-mono text-xs font-bold text-sentinel-accent group-hover:underline">
-                    {inc.id}
-                  </span>
+                  <span className="font-mono text-xs font-bold text-sentinel-accent group-hover:underline">{inc.id}</span>
                   <StatusBadge status={inc.status} size="sm" />
                 </div>
-
                 <div>
-                  <h3 className="font-mono text-sm font-bold text-slate-100 group-hover:text-sentinel-accent transition-colors line-clamp-1">
-                    {inc.title}
-                  </h3>
-                  <p className="text-xs font-mono text-slate-400 mt-1">
-                    Zone: {inc.zone} &bull; {inc.location}
-                  </p>
+                  <h3 className="font-mono text-sm font-bold text-slate-100 group-hover:text-sentinel-accent transition-colors line-clamp-1">{inc.title}</h3>
+                  <p className="text-xs font-mono text-slate-400 mt-1">Zone: {inc.zone} &bull; {inc.location}</p>
                 </div>
-
-                <p className="text-xs text-slate-300 font-sans line-clamp-2 leading-relaxed">
-                  {inc.summary}
-                </p>
-
+                <p className="text-xs text-slate-300 font-sans line-clamp-2 leading-relaxed">{inc.summary}</p>
                 <div className="p-2.5 rounded-lg bg-sentinel-surface border border-sentinel-border/50 space-y-1 font-mono text-[11px]">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Evidence Confidence:</span>
-                    <span className="text-sentinel-accent font-bold">{(inc.confidence * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Converged Sources:</span>
-                    <span className="text-emerald-400 font-bold">{inc.events.length} Channels</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Recorded Time:</span>
-                    <span className="text-slate-300">{inc.createdAt}</span>
-                  </div>
+                  <div className="flex justify-between text-slate-400"><span>Evidence Confidence:</span><span className="text-sentinel-accent font-bold">{(inc.confidence * 100).toFixed(0)}%</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Converged Sources:</span><span className="text-emerald-400 font-bold">{inc.events.length} Channels</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Recorded Time:</span><span className="text-slate-300">{inc.createdAt}</span></div>
                 </div>
               </div>
-
               <div className="mt-4 pt-3 border-t border-sentinel-border/60 flex items-center justify-between">
-                <span className="text-[10px] font-mono text-slate-500 uppercase">
-                  Category: {inc.category.replace('_', ' ')}
-                </span>
-                <Link
-                  to={`/incidents/${inc.id}`}
-                  className="flex items-center gap-1 text-xs font-mono font-bold text-sentinel-accent hover:text-cyan-300"
-                >
-                  <span>Open Dossier</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <span className="text-[10px] font-mono text-slate-500 uppercase">Category: {inc.category.replace('_', ' ')}</span>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => deleteIncident(inc.id)} className="p-1.5 rounded text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors" title="Delete incident and related records">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <Link to={`/incidents/${inc.id}`} className="flex items-center gap-1 text-xs font-mono font-bold text-sentinel-accent hover:text-cyan-300">
+                    <span>Open Dossier</span><ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

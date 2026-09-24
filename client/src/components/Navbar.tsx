@@ -2,26 +2,24 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSimulation } from '../context/SimulationContext';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Shield, 
-  Activity, 
-  Layers, 
-  PlayCircle, 
-  BarChart3, 
-  FileText, 
-  Settings, 
-  Sun, 
-  Moon, 
-  Radio, 
-  Zap, 
-  Cpu, 
-  Menu, 
-  X 
+import {
+  Shield,
+  Activity,
+  Layers,
+  PlayCircle,
+  BarChart3,
+  FileText,
+  Settings,
+  Sun,
+  Moon,
+  Radio,
+  Menu,
+  X
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
-  const { state, launchJudgeDemo } = useSimulation();
+  const { state } = useSimulation();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -31,7 +29,6 @@ export const Navbar: React.FC = () => {
     { to: '/simulation', label: 'Simulation', icon: PlayCircle },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/audit', label: 'Audit', icon: FileText },
-    { to: '/architecture', label: 'Architecture', icon: Cpu },
     { to: '/settings', label: 'Settings', icon: Settings },
   ];
 
@@ -45,7 +42,7 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 backdrop-blur-md bg-sentinel-bg/90 border-b border-sentinel-border transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          
+
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2.5 group">
@@ -72,11 +69,10 @@ export const Navbar: React.FC = () => {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium font-mono transition-all ${
-                      active
-                        ? 'bg-sentinel-surface text-sentinel-accent border border-sentinel-accent/30 shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-sentinel-hover'
-                    }`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium font-mono transition-all ${active
+                      ? 'bg-sentinel-surface text-sentinel-accent border border-sentinel-accent/30 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-sentinel-hover'
+                      }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span>{link.label}</span>
@@ -107,16 +103,6 @@ export const Navbar: React.FC = () => {
               <span className="text-[10px] text-slate-400 px-1 rounded bg-slate-800 font-bold">{state.speed}x</span>
             </div>
 
-            {/* Judge Demo Quick Action */}
-            <button
-              onClick={launchJudgeDemo}
-              className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs tracking-wider uppercase transition-all shadow-md shadow-cyan-500/20 hover:scale-105 active:scale-95 cursor-pointer"
-              title="Launch deterministic Judge Demo scenario with fire convergence"
-            >
-              <Zap className="w-3.5 h-3.5 fill-current" />
-              <span>Judge Demo</span>
-            </button>
-
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -129,13 +115,6 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="flex lg:hidden items-center gap-2">
-            <button
-              onClick={launchJudgeDemo}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-sentinel-accent text-slate-950 font-bold text-xs"
-            >
-              <Zap className="w-3 h-3" />
-              Demo
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md text-slate-400 hover:text-slate-200"
@@ -157,9 +136,8 @@ export const Navbar: React.FC = () => {
                 key={link.to}
                 to={link.to}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-mono ${
-                  active ? 'bg-sentinel-surface text-sentinel-accent' : 'text-slate-400'
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-mono ${active ? 'bg-sentinel-surface text-sentinel-accent' : 'text-slate-400'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{link.label}</span>

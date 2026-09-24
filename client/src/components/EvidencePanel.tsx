@@ -22,7 +22,7 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ incident, classNam
 
   return (
     <div className={`p-4 rounded-xl bg-sentinel-card border border-sentinel-border space-y-4 ${className}`}>
-      
+
       {/* Panel Header */}
       <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
         <div className="flex items-center gap-2">
@@ -34,6 +34,33 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ incident, classNam
         <span className="text-[10px] font-mono text-slate-400">
           {confirmed.length + supporting.length} Signals Validated
         </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
+        <div className="p-2 rounded bg-sentinel-surface border border-sentinel-border">
+          <span className="text-slate-500 block">RELATED SOURCES</span>
+          <strong className="text-slate-100 text-sm">{incident.metrics?.relatedSourceCount ?? incident.events.length}</strong>
+        </div>
+        <div className="p-2 rounded bg-sentinel-surface border border-sentinel-border">
+          <span className="text-slate-500 block">SOURCE AGREEMENT</span>
+          <strong className="text-cyan-400 text-sm">{incident.metrics?.sourceAgreementPercent ?? 0}%</strong>
+        </div>
+        <div className="p-2 rounded bg-sentinel-surface border border-sentinel-border">
+          <span className="text-slate-500 block">SMOKE SIGNAL</span>
+          <strong className="text-amber-400 text-sm">{incident.metrics?.smokePercentage ?? 0}%</strong>
+        </div>
+        <div className="p-2 rounded bg-sentinel-surface border border-sentinel-border">
+          <span className="text-slate-500 block">EVIDENCE COMPLETE</span>
+          <strong className="text-emerald-400 text-sm">{incident.metrics?.evidenceCompletenessPercent ?? 0}%</strong>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 text-[10px] font-mono text-slate-400">
+        {(incident.metrics?.sourceTypes || []).map(sourceType => (
+          <span key={sourceType} className="px-2 py-1 rounded border border-sentinel-border bg-sentinel-bg">
+            {sourceType.replace('_', ' ').toUpperCase()}
+          </span>
+        ))}
       </div>
 
       {/* 1. Confirmed Evidence */}

@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { SimulationProvider } from './context/SimulationContext';
 import { Navbar } from './components/Navbar';
-import { JudgeDemoBanner } from './components/JudgeDemoBanner';
 
 import { LandingPage } from './pages/LandingPage';
 import { OperationsDashboard } from './pages/OperationsDashboard';
@@ -13,7 +12,6 @@ import { SimulationPage } from './pages/SimulationPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditPage } from './pages/AuditPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { ArchitecturePage } from './pages/ArchitecturePage';
 
 export const App: React.FC = () => {
   return (
@@ -22,7 +20,6 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <div className="min-h-screen bg-sentinel-bg text-slate-100 flex flex-col font-sans transition-colors duration-300">
             <Navbar />
-            <JudgeDemoBanner />
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<LandingPage />} />
@@ -33,7 +30,6 @@ export const App: React.FC = () => {
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/audit" element={<AuditPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/architecture" element={<ArchitecturePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>

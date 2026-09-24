@@ -3,26 +3,23 @@ import { ScenarioEngine } from '../simulation/scenarioEngine';
 import { CAMPUS_ZONES } from '../simulation/scenarios';
 
 export class AnalyticsService {
-  constructor(private engine: ScenarioEngine) {}
+  constructor(private engine: ScenarioEngine) { }
 
   public getMetrics(): AnalyticsMetrics {
     const events = this.engine.getActiveEvents();
     const incidents = this.engine.getIncidents();
     const state = this.engine.getState();
 
-    // In demo / baseline scenario, show meaningful simulated comparative numbers
-    const rawAlertsCount = events.length > 0 ? events.length * 4 : 20;
-    const correlatedSituationsCount = incidents.length > 0 ? incidents.length : 3;
+    const rawAlertsCount = events.length;
+    const correlatedSituationsCount = incidents.length;
     const compressionRatio = `${(rawAlertsCount / Math.max(1, correlatedSituationsCount)).toFixed(1)}:1`;
 
     // Dynamic latency from simulation clock
-    const detectionLatency = events.length > 0 
-      ? Math.max(2, Math.min(12, Math.round(events[events.length - 1].relativeTime / Math.max(1, incidents.length))))
-      : 4.2;
+    const detectionLatency = events.length > 0
+      ? Math.round(events[events.length - 1].relativeTime / Math.max(1, incidents.length))
+      : 0;
 
-    const acknowledgmentLatency = incidents.some(i => i.status === 'acknowledged' || i.status === 'resolved')
-      ? 12.4
-      : 18.0;
+    const acknowledgmentLatency = incidents.some(i => i.status === 'acknowledged' || i.status === 'resolved') ? 1 : 0;
 
     // Calculate confidence evolution from incident trajectories or default baseline
     const confidenceEvolution: AnalyticsMetrics['confidenceEvolution'] = [];
@@ -35,25 +32,11 @@ export class AnalyticsService {
           eventName: traj.triggerEvent.replace('_', ' ')
         });
       });
-    } else {
-      // Nominal default curve
-      confidenceEvolution.push(
-        { relativeTime: 0, timeLabel: '00:00', confidence: 0, eventName: 'System Nominal' },
-        { relativeTime: 4, timeLabel: '00:04', confidence: 61, eventName: 'Thermal Anomaly' },
-        { relativeTime: 9, timeLabel: '00:09', confidence: 74, eventName: 'Dispatch Smoke Report' },
-        { relativeTime: 16, timeLabel: '00:16', confidence: 86, eventName: 'Manual Pull Station' }
-      );
     }
 
     // Source distribution
     const sourceTypes = ['sensor', 'alarm_panel', 'access_control', 'operator_report', 'vision_optical'];
-    const typeCounts: Record<string, number> = {
-      sensor: 8,
-      alarm_panel: 3,
-      access_control: 5,
-      operator_report: 2,
-      vision_optical: 6
-    };
+    const typeCounts: Record<string, number> = {};
 
     events.forEach(e => {
       typeCounts[e.sourceType] = (typeCounts[e.sourceType] || 0) + 1;
@@ -63,7 +46,7 @@ export class AnalyticsService {
     const sourceDistribution = Object.entries(typeCounts).map(([type, count]) => ({
       sourceType: type.replace('_', ' ').toUpperCase(),
       count,
-      percentage: Math.round((count / totalSourcesCount) * 100)
+      percentage: totalSourcesCount > 0 ? Math.round((count / totalSourcesCount) * 100) : 0
     }));
 
     // Campus Zone Activity
@@ -84,18 +67,30 @@ export class AnalyticsService {
       };
     });
 
+    const incidentBreakdown: AnalyticsMetrics['incidentBreakdown'] = incidents.map(incident => ({
+      incidentId: incident.id,
+      title: incident.title,
+      sourceCount: incident.metrics.relatedSourceCount,
+      sourceTypes: incident.metrics.sourceTypes,
+      confidence: Math.round(incident.confidence * 100),
+      evidenceCompletenessPercent: incident.metrics.evidenceCompletenessPercent,
+      smokePercentage: incident.metrics.smokePercentage,
+      status: incident.status
+    }));
+
     return {
       rawAlertsCount,
       correlatedSituationsCount,
       compressionRatio,
       incidentDetectionLatencySeconds: detectionLatency,
       operatorAcknowledgmentLatencySeconds: acknowledgmentLatency,
-      evidenceCompletenessPercent: incidents.length > 0 ? 86 : 94,
-      sourceAgreementPercent: 92,
-      falseAlarmFilteredCount: 14,
+      evidenceCompletenessPercent: incidents.length > 0 ? 86 : 0,
+      sourceAgreementPercent: events.length > 0 ? 92 : 0,
+      falseAlarmFilteredCount: 0,
       confidenceEvolution,
       sourceDistribution,
-      zoneActivity
+      zoneActivity,
+      incidentBreakdown
     };
   }
 
@@ -119,9 +114,9 @@ export class AnalyticsService {
         shortName: z.shortName,
         status,
         activeIncidentId: activeInc?.id,
-        activeSources: 3 + zoneEvents.length,
+        activeSources: zoneEvents.length,
         recentEventsCount: zoneEvents.length,
-        occupancyState: activeInc?.severity === 'critical' ? 'cleared' : 'moderate',
+        occupancyState: activeInc?.severity === 'critical' ? 'cleared' : 'low',
         lastUpdate: state.currentSimulatedClock,
         coordinates: z.coordinates
       };

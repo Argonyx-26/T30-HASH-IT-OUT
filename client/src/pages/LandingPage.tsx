@@ -1,34 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useSimulation } from '../context/SimulationContext';
 import { SignalConvergenceHero } from '../components/SignalConvergenceHero';
 import { IncidentCompressionGraphic } from '../components/IncidentCompressionGraphic';
 import { MultiAgentMesh } from '../components/MultiAgentMesh';
 import { CampusMap } from '../components/CampusMap';
-import { 
-  Shield, 
-  ArrowRight, 
-  Zap, 
-  Lock, 
-  UserCheck, 
-  EyeOff, 
-  FileCheck, 
-  CheckCircle2, 
-  Sparkles, 
-  Activity, 
-  Cpu, 
-  Layers 
+import {
+  Shield,
+  ArrowRight,
+  Zap,
+  Lock,
+  UserCheck,
+  EyeOff,
+  FileCheck,
+  CheckCircle2,
+  Sparkles,
+  Activity,
+  Cpu,
+  Layers
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const { launchJudgeDemo } = useSimulation();
-
   return (
     <div className="space-y-20 pb-24">
-      
+
       {/* 1. Hero Section */}
       <section className="relative pt-12 lg:pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center space-y-6">
-        
+
         {/* Subtitle Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 text-xs font-mono tracking-wider uppercase shadow-inner">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
@@ -59,13 +56,13 @@ export const LandingPage: React.FC = () => {
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          <button
-            onClick={launchJudgeDemo}
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-sentinel-surface hover:bg-sentinel-hover border border-sentinel-border text-slate-100 font-mono font-bold text-sm tracking-wider uppercase hover:border-sentinel-accent transition-all cursor-pointer"
+          <Link
+            to="/simulation"
+            className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-sentinel-surface hover:bg-sentinel-hover border border-sentinel-border text-slate-100 font-mono font-bold text-sm tracking-wider uppercase hover:border-sentinel-accent transition-all"
           >
             <Zap className="w-4 h-4 text-sentinel-accent" />
-            <span>Run Live Simulation (Judge Demo)</span>
-          </button>
+            <span>Create Scenario</span>
+          </Link>
         </div>
 
         {/* Live Signal Convergence Interactive Demonstration Graphic */}
@@ -111,7 +108,7 @@ export const LandingPage: React.FC = () => {
       {/* 4. Responsible AI & Privacy by Design */}
       <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-sentinel-card via-slate-900 to-sentinel-card border border-sentinel-border shadow-2xl relative overflow-hidden">
-          
+
           <div className="max-w-3xl">
             <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1 rounded-full uppercase tracking-wider font-bold">
               Ethical AI Architecture

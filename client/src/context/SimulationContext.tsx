@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { 
-  SimulationState, 
-  SafetyEvent, 
-  Incident, 
-  AuditEntry, 
-  SimulationScenario, 
-  CampusZone, 
+import {
+  SimulationState,
+  SafetyEvent,
+  Incident,
+  AuditEntry,
+  SimulationScenario,
+  CampusZone,
   AnalyticsMetrics,
-  AgentDefinition 
+  AgentDefinition,
+  SafetyEventSubmission
 } from '../types';
 
 interface SimulationContextType {
@@ -24,19 +25,18 @@ interface SimulationContextType {
   metrics: AnalyticsMetrics | null;
   agents: AgentDefinition[];
   connected: boolean;
-  judgeDemoStep: number;
-  isJudgeDemoActive: boolean;
   // Controls
-  startScenario: (scenarioId: string, isJudgeDemo?: boolean) => void;
+  startScenario: (scenarioId: string) => void;
+  addEvent: (event: SafetyEventSubmission) => void;
   pauseSimulation: () => void;
   resumeSimulation: () => void;
   resetSimulation: () => void;
   setSpeed: (speed: number) => void;
-  launchJudgeDemo: () => void;
   acknowledgeIncident: (incidentId: string) => void;
   resolveIncident: (incidentId: string, note?: string) => void;
   addOperatorNote: (incidentId: string, note: string) => void;
   toggleRecommendationStep: (incidentId: string, stepId: string) => void;
+  deleteIncident: (incidentId: string) => Promise<void>;
   refreshMetrics: () => void;
 }
 
@@ -47,18 +47,18 @@ const SimulationContext = createContext<SimulationContextType | undefined>(undef
 export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState<boolean>(false);
-  
+
   const [state, setState] = useState<SimulationState>({
-    scenarioId: 'scenario-fire-science-annex',
-    scenarioName: 'Possible Fire Incident',
+    scenarioId: '',
+    scenarioName: 'No situation loaded',
     isRunning: false,
     isPaused: false,
     speed: 1,
     elapsedSeconds: 0,
-    totalDuration: 40,
+    totalDuration: 0,
     currentSimulatedClock: '00:00',
-    sourcesOnline: 24,
-    totalSources: 24,
+    sourcesOnline: 0,
+    totalSources: 0,
     isJudgeDemo: false
   });
 
@@ -70,9 +70,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [zones, setZones] = useState<CampusZone[]>([]);
   const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null);
   const [agents, setAgents] = useState<AgentDefinition[]>([]);
-  
-  const [judgeDemoStep, setJudgeDemoStep] = useState<number>(0);
-  const [isJudgeDemoActive, setIsJudgeDemoActive] = useState<boolean>(false);
+
 
   // Compute selected incident
   const selectedIncident = incidents.find(i => i.id === selectedIncidentId) || (incidents.length > 0 ? incidents[0] : null);
@@ -138,28 +136,17 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     s.on('simulation.state', (newState: SimulationState) => {
       setState(newState);
-      if (newState.isJudgeDemo) {
-        setIsJudgeDemoActive(true);
-      }
     });
 
     s.on('simulation.clock', (newState: SimulationState) => {
       setState(newState);
-      // Judge demo stepping logic
-      if (newState.isJudgeDemo) {
-        if (newState.elapsedSeconds < 3) setJudgeDemoStep(1); // Baseline Nominal
-        else if (newState.elapsedSeconds < 14) setJudgeDemoStep(2); // Signal Convergence
-        else if (newState.elapsedSeconds < 24) setJudgeDemoStep(3); // Critical Incident Created
-        else if (newState.elapsedSeconds < 32) setJudgeDemoStep(4); // Confidence Escalation (86%)
-        else setJudgeDemoStep(5); // Ready for Human Authorization
-      }
     });
 
     s.on('event.created', (event: SafetyEvent) => {
       setEvents(prev => [event, ...prev.filter(e => e.id !== event.id)]);
       // Refresh zones and metrics
-      fetch(`${BACKEND_URL}/api/analytics/zones`).then(r => r.json()).then(setZones).catch(() => {});
-      fetch(`${BACKEND_URL}/api/analytics/metrics`).then(r => r.json()).then(setMetrics).catch(() => {});
+      fetch(`${BACKEND_URL}/api/analytics/zones`).then(r => r.json()).then(setZones).catch(() => { });
+      fetch(`${BACKEND_URL}/api/analytics/metrics`).then(r => r.json()).then(setMetrics).catch(() => { });
     });
 
     s.on('incident.created', (incident: Incident) => {
@@ -198,16 +185,34 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
-  const startScenario = (scenarioId: string, isJudgeDemo: boolean = false) => {
+  const startScenario = (scenarioId: string) => {
     if (socket) {
-      socket.emit('simulation.start', { scenarioId, isJudgeDemo });
+      socket.emit('simulation.start', { scenarioId });
     } else {
       fetch(`${BACKEND_URL}/api/simulation/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenarioId, isJudgeDemo })
+        body: JSON.stringify({ scenarioId })
       }).then(r => r.json()).then(setState);
     }
+  };
+
+  const addEvent = (event: SafetyEventSubmission) => {
+    if (socket) {
+      socket.emit('simulation.event.add', event);
+      return;
+    }
+
+    fetch(`${BACKEND_URL}/api/simulation/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    }).then(async response => {
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    }).then((createdEvent: SafetyEvent) => {
+      setEvents(prev => [createdEvent, ...prev.filter(item => item.id !== createdEvent.id)]);
+    }).catch(error => console.warn('[Sentinel Client] Event submission failed:', error));
   };
 
   const pauseSimulation = () => {
@@ -221,8 +226,6 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const resetSimulation = () => {
-    setIsJudgeDemoActive(false);
-    setJudgeDemoStep(0);
     if (socket) socket.emit('simulation.reset');
     else fetch(`${BACKEND_URL}/api/simulation/reset`, { method: 'POST' });
   };
@@ -234,13 +237,6 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ speed })
     });
-  };
-
-  const launchJudgeDemo = () => {
-    setIsJudgeDemoActive(true);
-    setJudgeDemoStep(1);
-    if (socket) socket.emit('simulation.judgeDemo');
-    else fetch(`${BACKEND_URL}/api/simulation/judge-demo`, { method: 'POST' });
   };
 
   const acknowledgeIncident = (incidentId: string) => {
@@ -259,7 +255,6 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ operatorName: 'Officer M. Vance', note })
     });
-    if (isJudgeDemoActive) setJudgeDemoStep(6);
   };
 
   const addOperatorNote = (incidentId: string, note: string) => {
@@ -276,8 +271,19 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     else fetch(`${BACKEND_URL}/api/incidents/${incidentId}/steps/${stepId}/toggle`, { method: 'POST' });
   };
 
+  const deleteIncident = async (incidentId: string) => {
+    if (socket) {
+      socket.emit('operator.deleteIncident', { incidentId });
+      return;
+    }
+    const response = await fetch(`${BACKEND_URL}/api/incidents/${incidentId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(await response.text());
+    setIncidents(previous => previous.filter(incident => incident.id !== incidentId));
+    setEvents(previous => previous.filter(event => !incidents.find(incident => incident.id === incidentId)?.eventIds.includes(event.id)));
+  };
+
   const refreshMetrics = () => {
-    fetch(`${BACKEND_URL}/api/analytics/metrics`).then(r => r.json()).then(setMetrics).catch(() => {});
+    fetch(`${BACKEND_URL}/api/analytics/metrics`).then(r => r.json()).then(setMetrics).catch(() => { });
   };
 
   return (
@@ -294,18 +300,17 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       metrics,
       agents,
       connected,
-      judgeDemoStep,
-      isJudgeDemoActive,
       startScenario,
+      addEvent,
       pauseSimulation,
       resumeSimulation,
       resetSimulation,
       setSpeed,
-      launchJudgeDemo,
       acknowledgeIncident,
       resolveIncident,
       addOperatorNote,
       toggleRecommendationStep,
+      deleteIncident,
       refreshMetrics
     }}>
       {children}

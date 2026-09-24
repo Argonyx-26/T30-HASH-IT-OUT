@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Clock, 
-  ShieldCheck, 
-  AlertTriangle, 
-  Layers, 
-  Sparkles, 
-  PieChart, 
-  CheckCircle2, 
-  Radio 
+import {
+  BarChart3,
+  TrendingUp,
+  Clock,
+  ShieldCheck,
+  AlertTriangle,
+  Layers,
+  Sparkles,
+  PieChart,
+  CheckCircle2,
+  Radio
 } from 'lucide-react';
 
 export const AnalyticsPage: React.FC = () => {
@@ -24,7 +24,7 @@ export const AnalyticsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-      
+
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sentinel-border">
         <div>
@@ -40,7 +40,7 @@ export const AnalyticsPage: React.FC = () => {
         </div>
 
         <span className="text-xs font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 px-3 py-1 rounded-full uppercase">
-          DEMO SCENARIO METRICS
+          LIVE INCIDENT METRICS
         </span>
       </div>
 
@@ -62,7 +62,7 @@ export const AnalyticsPage: React.FC = () => {
 
         {/* Big Comparative Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          
+
           {/* Traditional */}
           <div className="p-6 rounded-xl bg-red-950/15 border-2 border-red-500/30 space-y-3">
             <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider block">
@@ -70,7 +70,7 @@ export const AnalyticsPage: React.FC = () => {
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl sm:text-5xl font-mono font-extrabold text-red-400">
-                {metrics?.rawAlertsCount || 20}
+                {metrics?.rawAlertsCount ?? 0}
               </span>
               <span className="text-xs font-mono text-slate-400">Independent Alarms</span>
             </div>
@@ -86,7 +86,7 @@ export const AnalyticsPage: React.FC = () => {
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl sm:text-5xl font-mono font-extrabold text-sentinel-accent">
-                {metrics?.correlatedSituationsCount || 3}
+                {metrics?.correlatedSituationsCount ?? 0}
               </span>
               <span className="text-xs font-mono text-emerald-400 font-bold">Actionable Situations</span>
             </div>
@@ -100,14 +100,14 @@ export const AnalyticsPage: React.FC = () => {
 
       {/* 2. Key Performance Indicators */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        
+
         <div className="p-4 rounded-xl bg-sentinel-card border border-sentinel-border">
           <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
             <Clock className="w-3.5 h-3.5 text-cyan-400" />
             <span>Detection Latency</span>
           </div>
           <div className="mt-2 text-2xl font-mono font-bold text-slate-100">
-            {metrics?.incidentDetectionLatencySeconds || 4.2}s
+            {metrics?.incidentDetectionLatencySeconds ?? 0}s
           </div>
           <span className="text-[10px] font-mono text-emerald-400 mt-1 block">
             Sub-5s correlation threshold
@@ -120,7 +120,7 @@ export const AnalyticsPage: React.FC = () => {
             <span>Operator Ack Latency</span>
           </div>
           <div className="mt-2 text-2xl font-mono font-bold text-slate-100">
-            {metrics?.operatorAcknowledgmentLatencySeconds || 12.4}s
+            {metrics?.operatorAcknowledgmentLatencySeconds ?? 0}s
           </div>
           <span className="text-[10px] font-mono text-slate-400 mt-1 block">
             Rapid situational intake
@@ -133,7 +133,7 @@ export const AnalyticsPage: React.FC = () => {
             <span>Evidence Completeness</span>
           </div>
           <div className="mt-2 text-2xl font-mono font-bold text-slate-100">
-            {metrics?.evidenceCompletenessPercent || 88}%
+            {metrics?.evidenceCompletenessPercent ?? 0}%
           </div>
           <span className="text-[10px] font-mono text-slate-400 mt-1 block">
             Cross-modal source density
@@ -146,13 +146,37 @@ export const AnalyticsPage: React.FC = () => {
             <span>False Alarms Filtered</span>
           </div>
           <div className="mt-2 text-2xl font-mono font-bold text-slate-100">
-            {metrics?.falseAlarmFilteredCount || 14}
+            {metrics?.falseAlarmFilteredCount ?? 0}
           </div>
           <span className="text-[10px] font-mono text-amber-400 mt-1 block">
             Isolated sensors deprioritized
           </span>
         </div>
 
+      </div>
+
+      <div className="p-6 rounded-2xl bg-sentinel-card border border-sentinel-border space-y-3">
+        <div className="flex items-center justify-between pb-3 border-b border-sentinel-border">
+          <div>
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">Incident Source Coverage</h3>
+            <p className="text-xs text-slate-400 mt-1">Every row is derived from the sources stored against that incident.</p>
+          </div>
+          <Radio className="w-4 h-4 text-sentinel-accent" />
+        </div>
+        {(metrics?.incidentBreakdown || []).length === 0 ? (
+          <p className="text-xs font-mono text-slate-500 py-4">No stored incidents yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {metrics?.incidentBreakdown.map(incident => (
+              <div key={incident.incidentId} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center p-3 rounded-lg bg-sentinel-surface border border-sentinel-border text-xs font-mono">
+                <span className="sm:col-span-2 text-slate-200 font-bold">{incident.title}</span>
+                <span className="text-cyan-400">{incident.sourceCount} sources</span>
+                <span className="text-emerald-400">{incident.confidence}% confidence</span>
+                <span className="text-amber-400">Smoke {incident.smokePercentage}%</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 3. Section 34: Dynamic Confidence Analytics Chart */}
@@ -249,7 +273,7 @@ export const AnalyticsPage: React.FC = () => {
 
       {/* 4. Source Modality Distribution & Zone Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+
         {/* Source Distribution */}
         <div className="p-5 rounded-2xl bg-sentinel-card border border-sentinel-border space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
@@ -295,11 +319,10 @@ export const AnalyticsPage: React.FC = () => {
                     {zone.alertCount} Signals &bull; {zone.incidentCount} Incidents
                   </span>
                 </div>
-                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                  zone.status === 'critical' ? 'bg-red-500/10 text-red-400 border border-red-500/30' :
+                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${zone.status === 'critical' ? 'bg-red-500/10 text-red-400 border border-red-500/30' :
                   zone.status === 'elevated' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
-                  'bg-slate-800 text-slate-400'
-                }`}>
+                    'bg-slate-800 text-slate-400'
+                  }`}>
                   {zone.status}
                 </span>
               </div>

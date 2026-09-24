@@ -36,7 +36,7 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZone
             Digital Twin • Campus Spatial Mesh
           </h3>
           <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
-            [COORDINATES: 28.5450° N, 77.1926° E]
+            [BMS COLLEGE CAMPUS • BENGALURU]
           </span>
         </div>
 
@@ -56,12 +56,12 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZone
 
       {/* Stylized SVG Map Container */}
       <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-sentinel-bg rounded-lg border border-sentinel-border/40 overflow-hidden grid-bg flex items-center justify-center">
-        
+
         {/* Subtle Radar Sweep Background */}
         <div className="absolute inset-0 pointer-events-none opacity-20 radar-sweep" />
 
-        <svg 
-          viewBox="0 0 680 440" 
+        <svg
+          viewBox="0 0 680 440"
           className="w-full h-full select-none"
         >
           {/* Subtle Campus Walkways & Spatial Grid */}
@@ -73,11 +73,11 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZone
           </g>
 
           {/* Road / Main Spine Corridor */}
-          <path 
-            d="M 230 60 L 230 400 M 80 190 L 600 190" 
-            stroke="rgba(0, 210, 255, 0.15)" 
-            strokeWidth="3" 
-            fill="none" 
+          <path
+            d="M 230 60 L 230 400 M 80 190 L 600 190"
+            stroke="rgba(0, 210, 255, 0.15)"
+            strokeWidth="3"
+            fill="none"
           />
 
           {/* Render Buildings */}
@@ -200,7 +200,7 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZone
           {events.slice(0, 6).map((evt, idx) => {
             const matchingZone = zones.find(z => z.name.toLowerCase().includes(evt.zone.toLowerCase()));
             if (!matchingZone) return null;
-            
+
             // Jitter positions slightly within building for realism
             const pinX = matchingZone.coordinates.x + 20 + ((idx * 28) % (matchingZone.coordinates.width - 40));
             const pinY = matchingZone.coordinates.y + matchingZone.coordinates.height - 18;
@@ -209,11 +209,11 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZone
               <g key={evt.id} transform={`translate(${pinX}, ${pinY})`} className="pointer-events-none animate-pulse">
                 <circle r="6" fill="rgba(239, 68, 68, 0.3)" />
                 <circle r="3.5" fill="#ef4444" />
-                <text 
-                  x="8" 
-                  y="3" 
-                  fill="#fca5a5" 
-                  fontSize="8" 
+                <text
+                  x="8"
+                  y="3"
+                  fill="#fca5a5"
+                  fontSize="8"
                   fontFamily="JetBrains Mono, monospace"
                   fontWeight="bold"
                 >
@@ -242,7 +242,7 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZone
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={inspectedZone.status} size="sm" />
-              <button 
+              <button
                 onClick={() => setInspectedZone(null)}
                 className="text-slate-400 hover:text-slate-100 p-0.5 rounded hover:bg-sentinel-hover"
               >

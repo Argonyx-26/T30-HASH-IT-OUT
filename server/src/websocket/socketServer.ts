@@ -26,8 +26,14 @@ export class SocketServer {
 
       // Operator client commands over WebSocket
       socket.on('simulation.start', (data) => {
-        const state = this.engine.startScenario(data.scenarioId, data.isJudgeDemo, true);
-        this.io.emit('simulation.state', state);
+        if (!data?.scenarioId) return;
+        const state = this.engine.startScenario(data.scenarioId, false, true);
+        if (state.scenarioId) this.io.emit('simulation.state', state);
+      });
+
+      socket.on('simulation.event.add', (data) => {
+        const event = this.engine.ingestEvent(data);
+        if (event) this.io.emit('event.created', event);
       });
 
       socket.on('simulation.pause', () => {
@@ -49,11 +55,6 @@ export class SocketServer {
 
       socket.on('simulation.speed', (multiplier: number) => {
         const state = this.engine.setSpeed(multiplier);
-        this.io.emit('simulation.state', state);
-      });
-
-      socket.on('simulation.judgeDemo', () => {
-        const state = this.engine.launchJudgeDemo();
         this.io.emit('simulation.state', state);
       });
 
@@ -84,6 +85,14 @@ export class SocketServer {
         const incident = this.engine.toggleRecommendationStep(data.incidentId, data.stepId);
         if (incident) {
           this.io.emit('incident.updated', incident);
+        }
+      });
+
+      socket.on('operator.deleteIncident', async (data) => {
+        const deleted = await this.engine.deleteIncident(data.incidentId);
+        if (deleted) {
+          this.io.emit('incidents.list', this.engine.getIncidents());
+          this.io.emit('events.list', this.engine.getActiveEvents());
         }
       });
     });

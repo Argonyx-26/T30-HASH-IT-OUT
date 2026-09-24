@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Radio, Bell, KeyRound, Users, ShieldAlert, Sparkles, ArrowRight, Cpu, CheckCircle } from 'lucide-react';
+import { Flame, Radio, Bell, KeyRound, Users, Sparkles, ArrowRight, Cpu } from 'lucide-react';
 
 export const SignalConvergenceHero: React.FC = () => {
   const [step, setStep] = useState(0);
@@ -22,7 +22,7 @@ export const SignalConvergenceHero: React.FC = () => {
 
   return (
     <div className="relative w-full max-w-5xl mx-auto p-6 lg:p-8 rounded-2xl bg-gradient-to-b from-sentinel-card via-sentinel-surface/80 to-sentinel-card border border-sentinel-border shadow-2xl overflow-hidden">
-      
+
       {/* Background Grid & Ambient Glow */}
       <div className="absolute inset-0 grid-bg opacity-40 pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-sentinel-accent/10 rounded-full blur-3xl pointer-events-none" />
@@ -42,7 +42,7 @@ export const SignalConvergenceHero: React.FC = () => {
 
       {/* The 3-Stage Transformation Layout */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-11 gap-4 items-center relative z-10">
-        
+
         {/* Left: Scattered Signals (4 Cols) */}
         <div className="md:col-span-4 space-y-2.5">
           <div className="text-[11px] font-mono uppercase text-slate-400 font-bold mb-1 flex items-center gap-1.5">
@@ -57,11 +57,10 @@ export const SignalConvergenceHero: React.FC = () => {
             return (
               <div
                 key={sig.label}
-                className={`flex items-center justify-between p-2.5 rounded-lg border text-xs font-mono transition-all duration-500 ${
-                  isFired
+                className={`flex items-center justify-between p-2.5 rounded-lg border text-xs font-mono transition-all duration-500 ${isFired
                     ? `bg-sentinel-bg ${sig.border} shadow-md translate-x-2`
                     : 'bg-sentinel-bg/40 border-sentinel-border/30 opacity-50'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className={`w-4 h-4 ${sig.color}`} />
@@ -78,7 +77,7 @@ export const SignalConvergenceHero: React.FC = () => {
           <div className="relative group">
             {/* Glowing Rings */}
             <div className="absolute -inset-4 bg-gradient-to-r from-sentinel-accent to-blue-600 rounded-full blur opacity-40 group-hover:opacity-75 transition duration-1000 animate-pulse" />
-            
+
             <div className="relative w-28 h-28 rounded-full bg-slate-900 border-2 border-sentinel-accent/60 flex flex-col items-center justify-center text-center p-2 shadow-2xl">
               <Cpu className="w-7 h-7 text-sentinel-accent animate-pulse mb-1" />
               <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-100">
@@ -96,57 +95,6 @@ export const SignalConvergenceHero: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Collapsed Prioritized Incident (4 Cols) */}
-        <div className="md:col-span-4">
-          <div className="text-[11px] font-mono uppercase text-slate-400 font-bold mb-1 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-400" />
-            One Explainable Situation
-          </div>
-
-          <div className="p-4 rounded-xl bg-gradient-to-b from-red-950/30 to-sentinel-card border-2 border-red-500/40 shadow-xl relative overflow-hidden transition-all duration-500">
-            {/* Top red header */}
-            <div className="flex items-center justify-between pb-2 border-b border-red-500/20">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-red-400 animate-pulse" />
-                <h4 className="font-mono text-sm font-bold text-slate-100 uppercase">
-                  POSSIBLE FIRE
-                </h4>
-              </div>
-              <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40 font-bold">
-                CRITICAL
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-2 font-mono text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>Location:</span>
-                <span className="text-slate-200 font-bold">Science Annex (West Stairwell)</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Evidence Confidence:</span>
-                <span className="text-sentinel-accent font-bold">86% Strong</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Correlated Sources:</span>
-                <span className="text-emerald-400 font-bold">5 Independent Channels</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Action Protocol:</span>
-                <span className="text-purple-400 font-bold">Human Verification Staged</span>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-2.5 border-t border-red-500/20 text-[11px] text-slate-300 font-sans leading-relaxed">
-              &ldquo;5 independent sensory channels converged within 90 seconds. No autonomous actions taken; human confirmation requested.&rdquo;
-            </div>
-
-            <div className="mt-3 flex items-center gap-1 text-[10px] font-mono text-emerald-400">
-              <CheckCircle className="w-3 h-3" />
-              <span>Reduced 5 raw alarms to 1 prioritized decision file</span>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       {/* Bottom Step Indicator Bar */}
@@ -159,9 +107,8 @@ export const SignalConvergenceHero: React.FC = () => {
             <button
               key={s}
               onClick={() => setStep(s)}
-              className={`h-2 rounded-full transition-all cursor-pointer ${
-                step === s ? 'w-8 bg-sentinel-accent' : 'w-2 bg-slate-700 hover:bg-slate-500'
-              }`}
+              className={`h-2 rounded-full transition-all cursor-pointer ${step === s ? 'w-8 bg-sentinel-accent' : 'w-2 bg-slate-700 hover:bg-slate-500'
+                }`}
             />
           ))}
         </div>

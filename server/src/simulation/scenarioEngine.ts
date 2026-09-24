@@ -1,6 +1,7 @@
 import { SCENARIOS } from './scenarios';
-import { SafetyEvent, SimulationScenario, SimulationState, Incident, AuditEntry } from '../types';
+import { SafetyEvent, SafetyEventSubmission, SimulationScenario, SimulationState, Incident, AuditEntry } from '../types';
 import { CorrelationAgent } from '../agents/correlationAgent';
+import { SimulationPersistence } from '../data/simulationPersistence';
 
 export class ScenarioEngine {
   private currentScenario: SimulationScenario;
@@ -22,22 +23,31 @@ export class ScenarioEngine {
   public onSimulationTick?: (state: SimulationState) => void;
   public onAuditCreated?: (audit: AuditEntry) => void;
 
-  constructor() {
+  constructor(private readonly persistence?: SimulationPersistence) {
     this.currentScenario = SCENARIOS[0];
     this.correlationAgent = new CorrelationAgent();
     this.state = {
-      scenarioId: this.currentScenario.id,
-      scenarioName: this.currentScenario.name,
+      scenarioId: '',
+      scenarioName: 'No situation loaded',
       isRunning: false,
       isPaused: false,
       speed: 1,
       elapsedSeconds: 0,
-      totalDuration: this.currentScenario.duration,
+      totalDuration: 0,
       currentSimulatedClock: '00:00',
-      sourcesOnline: 24,
-      totalSources: 24,
+      sourcesOnline: 0,
+      totalSources: 0,
       isJudgeDemo: false
     };
+  }
+
+  public async loadPersistedData(): Promise<void> {
+    if (!this.persistence?.isConfigured) return;
+
+    const data = await this.persistence.load();
+    this.incidents = data.incidents;
+    this.activeEvents = data.events;
+    this.auditLog = data.auditLog;
   }
 
   public getScenarios(): SimulationScenario[] {
@@ -64,9 +74,26 @@ export class ScenarioEngine {
     return this.auditLog;
   }
 
+  public async deleteIncident(incidentId: string): Promise<boolean> {
+    const incidentIndex = this.incidents.findIndex(incident => incident.id === incidentId);
+    if (incidentIndex === -1) return false;
+
+    const eventIds = new Set(this.incidents[incidentIndex].eventIds);
+    this.incidents.splice(incidentIndex, 1);
+    this.activeEvents = this.activeEvents.filter(event => !eventIds.has(event.id));
+    this.auditLog = this.auditLog.filter(audit => audit.incidentId !== incidentId);
+    await (this.persistence?.deleteIncident(incidentId) || Promise.resolve());
+    this.recordAudit('OPERATOR', 'Incident Deleted', `Incident ${incidentId} and its related records were deleted.`);
+    return true;
+  }
+
   public startScenario(scenarioId: string, isJudgeDemo: boolean = false, autoPlay: boolean = true): SimulationState {
-    this.reset();
-    const scenario = SCENARIOS.find(s => s.id === scenarioId) || SCENARIOS[0];
+    this.stopTimer();
+    this.emittedEventIndices.clear();
+    const scenario = SCENARIOS.find(s => s.id === scenarioId);
+    if (!scenario) {
+      return this.getState();
+    }
     this.currentScenario = scenario;
     this.state = {
       scenarioId: scenario.id,
@@ -77,8 +104,8 @@ export class ScenarioEngine {
       elapsedSeconds: 0,
       totalDuration: scenario.duration,
       currentSimulatedClock: this.formatSimulatedClock(0),
-      sourcesOnline: 24,
-      totalSources: 24,
+      sourcesOnline: 0,
+      totalSources: 0,
       isJudgeDemo
     };
 
@@ -123,23 +150,34 @@ export class ScenarioEngine {
     this.activeEvents = [];
     this.incidents = [];
     this.state = {
-      scenarioId: this.currentScenario.id,
-      scenarioName: this.currentScenario.name,
+      scenarioId: '',
+      scenarioName: 'No situation loaded',
       isRunning: false,
       isPaused: false,
       speed: 1,
       elapsedSeconds: 0,
-      totalDuration: this.currentScenario.duration,
+      totalDuration: 0,
       currentSimulatedClock: '00:00',
-      sourcesOnline: 24,
-      totalSources: 24,
+      sourcesOnline: 0,
+      totalSources: 0,
       isJudgeDemo: false
     };
     return this.getState();
   }
 
-  public launchJudgeDemo(): SimulationState {
-    return this.startScenario('scenario-fire-science-annex', true, true);
+  public ingestEvent(submission: SafetyEventSubmission): SafetyEvent | null {
+    if (!this.state.scenarioId) return null;
+
+    const safetyEvent: SafetyEvent = {
+      ...submission,
+      id: `EVT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      relativeTime: Math.floor(this.state.elapsedSeconds),
+      timestamp: this.state.currentSimulatedClock,
+      simulatedClock: this.state.currentSimulatedClock
+    };
+
+    this.processEvent(safetyEvent);
+    return safetyEvent;
   }
 
   public acknowledgeIncident(incidentId: string, operatorName: string = 'Campus Operator #04'): Incident | null {
@@ -161,7 +199,7 @@ export class ScenarioEngine {
     incident.operatorNotes.push(note);
 
     this.recordAudit('OPERATOR', 'Incident Acknowledged', `${operatorName} acknowledged incident ${incident.id} (${incident.title})`, incident.id);
-    
+
     if (this.onIncidentUpdated) {
       this.onIncidentUpdated(incident);
     }
@@ -239,7 +277,7 @@ export class ScenarioEngine {
   private startTimer(): void {
     this.stopTimer();
     const tickIntervalMs = 200; // 5 ticks per real-world second
-    
+
     this.timer = setInterval(() => {
       if (!this.state.isRunning || this.state.isPaused) return;
 
@@ -274,7 +312,7 @@ export class ScenarioEngine {
     this.currentScenario.events.forEach((eventDef, index) => {
       if (!this.emittedEventIndices.has(index) && this.state.elapsedSeconds >= eventDef.relativeTime) {
         this.emittedEventIndices.add(index);
-        
+
         // Build dynamic event with runtime generated timestamp
         const safetyEvent: SafetyEvent = {
           id: `EVT-${1000 + Math.floor(Math.random() * 9000)}`,
@@ -292,32 +330,39 @@ export class ScenarioEngine {
           evidenceCategory: eventDef.evidenceCategory
         };
 
-        this.activeEvents.unshift(safetyEvent);
-
-        this.recordAudit('CORRELATION_AGENT', 'Signal Received', `Captured ${safetyEvent.eventType} from ${safetyEvent.source} in ${safetyEvent.zone}`, undefined, safetyEvent.id);
-
-        if (this.onEventCreated) {
-          this.onEventCreated(safetyEvent);
-        }
-
-        // Process through Correlation Agent
-        const prevIncidentCount = this.incidents.length;
-        this.incidents = this.correlationAgent.correlateEvents([safetyEvent], this.incidents);
-        const updatedIncident = this.incidents.find(i => i.zone === safetyEvent.zone);
-
-        if (updatedIncident) {
-          if (this.incidents.length > prevIncidentCount) {
-            if (this.onIncidentCreated) {
-              this.onIncidentCreated(updatedIncident);
-            }
-          } else {
-            if (this.onIncidentUpdated) {
-              this.onIncidentUpdated(updatedIncident);
-            }
-          }
-        }
+        this.processEvent(safetyEvent);
       }
     });
+  }
+
+  private processEvent(safetyEvent: SafetyEvent): void {
+    this.activeEvents.unshift(safetyEvent);
+    const signalAudit = this.recordAudit(
+      'CORRELATION_AGENT',
+      'Signal Received',
+      `Captured ${safetyEvent.eventType} from ${safetyEvent.source} in ${safetyEvent.zone}`,
+      undefined,
+      safetyEvent.id,
+      false
+    );
+    this.onEventCreated?.(safetyEvent);
+
+    const prevIncidentCount = this.incidents.length;
+    this.incidents = this.correlationAgent.correlateEvents([safetyEvent], this.incidents);
+    const updatedIncident = this.incidents.find(i => i.eventIds.includes(safetyEvent.id));
+
+    if (!updatedIncident) return;
+    this.persistIncident(updatedIncident)
+      .then(() => this.persistEvent(safetyEvent, updatedIncident.id))
+      .then(() => this.persistAudit(signalAudit))
+      .catch(error => {
+        console.warn('[SENTINEL CORE] Supabase event transaction failed:', error.message);
+      });
+    if (this.incidents.length > prevIncidentCount) {
+      this.onIncidentCreated?.(updatedIncident);
+    } else {
+      this.onIncidentUpdated?.(updatedIncident);
+    }
   }
 
   private formatSimulatedClock(seconds: number): string {
@@ -326,7 +371,14 @@ export class ScenarioEngine {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  private recordAudit(actor: AuditEntry['actor'], action: string, details: string, incidentId?: string, eventId?: string): void {
+  private recordAudit(
+    actor: AuditEntry['actor'],
+    action: string,
+    details: string,
+    incidentId?: string,
+    eventId?: string,
+    persist = true
+  ): AuditEntry {
     const entry: AuditEntry = {
       id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       timestamp: this.state.currentSimulatedClock,
@@ -341,5 +393,21 @@ export class ScenarioEngine {
     if (this.onAuditCreated) {
       this.onAuditCreated(entry);
     }
+    if (persist) this.persistAudit(entry).catch(error => {
+      console.warn('[SENTINEL CORE] Supabase audit persistence failed:', error.message);
+    });
+    return entry;
+  }
+
+  private persistIncident(incident: Incident): Promise<void> {
+    return this.persistence?.saveIncident(incident) || Promise.resolve();
+  }
+
+  private persistEvent(event: SafetyEvent, incidentId?: string): Promise<void> {
+    return this.persistence?.saveEvent(event, incidentId) || Promise.resolve();
+  }
+
+  private persistAudit(audit: AuditEntry): Promise<void> {
+    return this.persistence?.saveAudit(audit) || Promise.resolve();
   }
 }

@@ -8,26 +8,26 @@ import { EvidencePanel } from '../components/EvidencePanel';
 import { ResponseRecommendationPanel } from '../components/ResponseRecommendationPanel';
 import { ExplainabilityDrawer } from '../components/ExplainabilityDrawer';
 import { EventTimeline } from '../components/EventTimeline';
-import { 
-  ShieldAlert, 
-  HelpCircle, 
-  ExternalLink, 
-  Layers, 
-  Radio, 
-  Sparkles, 
-  CheckCircle, 
-  Clock, 
-  ArrowUpRight 
+import {
+  ShieldAlert,
+  HelpCircle,
+  ExternalLink,
+  Layers,
+  Radio,
+  Sparkles,
+  CheckCircle,
+  Clock,
+  ArrowUpRight
 } from 'lucide-react';
 
 export const OperationsDashboard: React.FC = () => {
-  const { 
-    incidents, 
-    selectedIncident, 
-    selectedIncidentId, 
-    setSelectedIncidentId, 
-    events, 
-    state 
+  const {
+    incidents,
+    selectedIncident,
+    selectedIncidentId,
+    setSelectedIncidentId,
+    events,
+    state
   } = useSimulation();
 
   const [explainabilityOpen, setExplainabilityOpen] = useState(false);
@@ -35,15 +35,12 @@ export const OperationsDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      
+
       {/* Top Level System Header / Sub-bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sentinel-border">
         <div>
           <h1 className="text-xl sm:text-2xl font-mono font-bold text-slate-100 flex items-center gap-2">
             <span>COMMAND & CONTROL MATRIX</span>
-            <span className="text-xs font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 px-2 py-0.5 rounded">
-              ZONE LEVEL 1-3
-            </span>
           </h1>
           <p className="text-xs font-sans text-slate-400 mt-0.5">
             Active Multi-Agent Situational Decision Support • Authorized Personnel Only
@@ -68,7 +65,7 @@ export const OperationsDashboard: React.FC = () => {
 
       {/* Main 3-Column Command Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* LEFT: LEVEL 1 — Incident Queue (3 Cols) */}
         <div className="lg:col-span-3 space-y-4">
           <div className="flex items-center justify-between">
@@ -105,13 +102,12 @@ export const OperationsDashboard: React.FC = () => {
                   <div
                     key={inc.id}
                     onClick={() => setSelectedIncidentId(inc.id)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-200 group ${
-                      isSelected
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-200 group ${isSelected
                         ? 'bg-sentinel-surface border-sentinel-accent shadow-lg shadow-sentinel-accent/10 translate-x-1'
                         : isCritical
-                        ? 'bg-red-950/20 border-red-500/40 hover:bg-sentinel-hover'
-                        : 'bg-sentinel-card border-sentinel-border hover:bg-sentinel-hover'
-                    }`}
+                          ? 'bg-red-950/20 border-red-500/40 hover:bg-sentinel-hover'
+                          : 'bg-sentinel-card border-sentinel-border hover:bg-sentinel-hover'
+                      }`}
                   >
                     <div className="flex items-center justify-between pb-2 border-b border-sentinel-border/50">
                       <span className="font-mono text-xs font-bold text-slate-200 group-hover:text-sentinel-accent">
@@ -145,38 +141,11 @@ export const OperationsDashboard: React.FC = () => {
 
         {/* CENTER: LEVEL 2 — Digital Twin & Spatial Picture (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <CampusMap 
+          <CampusMap
             selectedZoneName={selectedIncident?.zone || selectedZoneFilter}
             onSelectZone={(zoneName) => setSelectedZoneFilter(zoneName)}
           />
 
-          {/* Quick Situation Graph preview for selected incident */}
-          {selectedIncident && (
-            <div className="p-3.5 rounded-xl bg-sentinel-card border border-sentinel-border">
-              <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
-                <span className="font-mono text-xs font-bold text-slate-200 uppercase">
-                  Spatial Correlation Chain
-                </span>
-                <Link
-                  to={`/incidents/${selectedIncident.id}`}
-                  className="text-[10px] font-mono text-cyan-400 hover:underline flex items-center gap-1"
-                >
-                  <span>Open Full Graph</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              </div>
-              <p className="text-xs text-slate-300 font-sans mt-2 leading-relaxed">
-                {selectedIncident.summary}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[10px]">
-                {selectedIncident.events.map((e) => (
-                  <span key={e.id} className="px-2 py-0.5 rounded bg-sentinel-bg border border-sentinel-border text-slate-300">
-                    &bull; {e.source} [{e.timestamp}]
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* RIGHT: LEVEL 2 & 3 — Selected Incident Intelligence & Recommendations (4 Cols) */}
@@ -239,7 +208,7 @@ export const OperationsDashboard: React.FC = () => {
                 Command Center Nominal
               </h3>
               <p className="text-xs text-slate-500 font-sans leading-relaxed">
-                Select an incident from the queue or launch the Judge Demo to inspect real-time situational awareness workflows.
+                Create or load an incident to inspect its details and response workflow.
               </p>
             </div>
           )}

@@ -17,6 +17,19 @@ export function createIncidentsRouter(engine: ScenarioEngine): Router {
     res.json(incident);
   });
 
+  router.delete('/:id', async (req, res) => {
+    try {
+      const deleted = await engine.deleteIncident(req.params.id);
+      if (!deleted) {
+        res.status(404).json({ error: 'Incident not found' });
+        return;
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Incident deletion failed' });
+    }
+  });
+
   router.post('/:id/acknowledge', (req, res) => {
     const { operatorName } = req.body;
     const incident = engine.acknowledgeIncident(req.params.id, operatorName);

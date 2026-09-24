@@ -1,4 +1,4 @@
-import { SafetyEvent, Incident, IncidentSeverity, EvidenceItem, UnknownItem, RecommendedStep, AgentContribution } from '../types';
+import { SafetyEvent, Incident, IncidentSeverity, EvidenceItem, UnknownItem, RecommendedStep, AgentContribution, IncidentMetrics } from '../types';
 
 export class CorrelationAgent {
   /**
@@ -8,11 +8,18 @@ export class CorrelationAgent {
     const incidents = [...existingIncidents];
 
     for (const event of events) {
-      // Find matching active incident in same zone
-      let match = incidents.find(inc => 
-        inc.zone === event.zone && 
-        inc.status !== 'resolved' && 
-        inc.status !== 'false_alarm'
+      const eventCategory = this.mapEventToCategory(event.eventType);
+      const correlationWindowSeconds = 120;
+
+      // A situation is one category in one zone within a bounded time window.
+      // Different categories in the same building remain separate incidents.
+      let match = incidents.find(inc =>
+        inc.zone === event.zone &&
+        inc.category === eventCategory &&
+        inc.status !== 'resolved' &&
+        inc.status !== 'false_alarm' &&
+        event.relativeTime >= inc.createdRelativeTime &&
+        event.relativeTime - inc.createdRelativeTime <= correlationWindowSeconds
       );
 
       if (!match) {
@@ -33,7 +40,7 @@ export class CorrelationAgent {
     const category = this.mapEventToCategory(event.eventType);
     const title = this.formatTitle(category, event.zone, event.location);
     const initialSeverity: IncidentSeverity = event.severity === 'critical' ? 'critical' : event.severity === 'high' ? 'elevated' : 'watch';
-    
+
     // Initial confidence starts lower for single source
     const initialConfidence = Math.min(0.62, Math.max(0.40, event.confidence * 0.7));
 
@@ -84,6 +91,7 @@ export class CorrelationAgent {
       summary: `Initial signal detected in ${event.zone} (${event.location}). Sentinel is actively monitoring for cross-modal confirmation.`,
       eventIds: [event.id],
       events: [event],
+      metrics: this.calculateMetrics([event]),
       evidenceSummary: { confirmed, supporting, unknown },
       explanation: {
         whyCreated: `Signal detected by ${event.source} indicating potential anomaly in ${event.zone}.`,
@@ -118,6 +126,7 @@ export class CorrelationAgent {
 
     incident.eventIds.push(event.id);
     incident.events.push(event);
+    incident.metrics = this.calculateMetrics(incident.events);
     incident.updatedAt = event.timestamp;
 
     // Check evidence category
@@ -140,7 +149,7 @@ export class CorrelationAgent {
     // Dynamic confidence evolution: independent sources increase confidence
     const uniqueSourceTypes = new Set(incident.events.map(e => e.sourceType)).size;
     const confirmedCount = incident.evidenceSummary.confirmed.length;
-    
+
     // Formula: baseline + source diversity bonus + confirmation bonus
     let newConfidence = 0.55 + (uniqueSourceTypes * 0.07) + (confirmedCount * 0.05);
     newConfidence = Math.min(0.94, Math.max(0.50, newConfidence));
@@ -168,7 +177,7 @@ export class CorrelationAgent {
 
     // Update summary & explanations
     incident.summary = `Multiple independent signals (${incident.events.length} sources across ${uniqueSourceTypes} modalities) are converging around ${incident.location}.`;
-    
+
     incident.explanation.whyPrioritized = incident.severity === 'critical'
       ? `Severity elevated to CRITICAL due to confirmation from ${event.source} and ${incident.events.length} converging modalities.`
       : `Elevated priority due to multi-source corroboration in ${incident.zone}.`;
@@ -192,6 +201,27 @@ export class CorrelationAgent {
       incidentId: incident.id,
       eventId: event.id
     });
+  }
+
+  private calculateMetrics(events: SafetyEvent[]): IncidentMetrics {
+    const sourceTypes = [...new Set(events.map(event => event.sourceType))];
+    const averageConfidence = events.length === 0 ? 0 : events.reduce((sum, event) => sum + event.confidence, 0) / events.length;
+    const percentageFor = (types: SafetyEvent['eventType'][]) => {
+      const matching = events.filter(event => types.includes(event.eventType));
+      return events.length === 0 ? 0 : Math.round((matching.reduce((sum, event) => sum + event.confidence, 0) / events.length) * 100);
+    };
+
+    return {
+      relatedSourceCount: events.length,
+      sourceTypes,
+      evidenceCompletenessPercent: Math.round((events.filter(event => event.evidence.trim().length > 0).length / Math.max(1, events.length)) * 100),
+      sourceAgreementPercent: Math.round(averageConfidence * 100),
+      smokePercentage: percentageFor(['smoke_report']),
+      thermalRiskPercentage: percentageFor(['thermal_anomaly']),
+      accessRiskPercentage: percentageFor(['access_violation', 'perimeter_motion']),
+      crowdRiskPercentage: percentageFor(['crowd_anomaly']),
+      equipmentRiskPercentage: percentageFor(['equipment_overheat'])
+    };
   }
 
   private mapEventToCategory(eventType: SafetyEvent['eventType']): Incident['category'] {

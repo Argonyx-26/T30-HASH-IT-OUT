@@ -14,8 +14,25 @@ export function createSimulationRouter(engine: ScenarioEngine): Router {
 
   router.post('/start', (req, res) => {
     const { scenarioId, isJudgeDemo } = req.body;
+    if (!scenarioId) {
+      res.status(400).json({ error: 'A scenarioId is required' });
+      return;
+    }
     const state = engine.startScenario(scenarioId, !!isJudgeDemo, true);
+    if (!state.scenarioId) {
+      res.status(404).json({ error: 'Scenario not found' });
+      return;
+    }
     res.json(state);
+  });
+
+  router.post('/events', (req, res) => {
+    const event = engine.ingestEvent(req.body);
+    if (!event) {
+      res.status(400).json({ error: 'Select a scenario before adding an event' });
+      return;
+    }
+    res.status(201).json(event);
   });
 
   router.post('/pause', (_req, res) => {
@@ -36,11 +53,6 @@ export function createSimulationRouter(engine: ScenarioEngine): Router {
   router.post('/speed', (req, res) => {
     const { speed } = req.body;
     const state = engine.setSpeed(Number(speed));
-    res.json(state);
-  });
-
-  router.post('/judge-demo', (_req, res) => {
-    const state = engine.launchJudgeDemo();
     res.json(state);
   });
 
