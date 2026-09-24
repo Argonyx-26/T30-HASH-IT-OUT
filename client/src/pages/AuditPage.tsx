@@ -1,38 +1,49 @@
 import React, { useState } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import { 
-  FileText, 
-  Search, 
-  Filter, 
-  ShieldCheck, 
-  User, 
-  Cpu, 
-  Activity, 
-  Clock, 
-  ArrowUpRight, 
-  Lock 
+import {
+  FileText,
+  Search,
+  Filter,
+  ShieldCheck,
+  User,
+  Cpu,
+  Activity,
+  Clock,
+  ArrowUpRight,
+  Lock,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AuditPage: React.FC = () => {
-  const { auditLog } = useSimulation();
+  const { auditLog, clearAuditLog, deleteAuditEntry } = useSimulation();
   const [searchTerm, setSearchTerm] = useState('');
   const [actorFilter, setActorFilter] = useState<string>('all');
 
+  const handleClearAudit = async () => {
+    if (!window.confirm('Clear the entire audit log? This cannot be undone.')) return;
+    await clearAuditLog();
+  };
+
+  const handleDeleteAudit = async (auditId: string) => {
+    if (!window.confirm('Delete this audit entry? This cannot be undone.')) return;
+    await deleteAuditEntry(auditId);
+  };
+
   const filteredLog = auditLog.filter((entry) => {
     const matchesSearch = entry.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          entry.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (entry.incidentId && entry.incidentId.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesActor = actorFilter === 'all' || 
-                         (actorFilter === 'operator' && entry.actor === 'OPERATOR') ||
-                         (actorFilter === 'agent' && entry.actor.includes('AGENT')) ||
-                         (actorFilter === 'system' && entry.actor === 'SYSTEM');
+      entry.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.incidentId && entry.incidentId.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesActor = actorFilter === 'all' ||
+      (actorFilter === 'operator' && entry.actor === 'OPERATOR') ||
+      (actorFilter === 'agent' && entry.actor.includes('AGENT')) ||
+      (actorFilter === 'system' && entry.actor === 'SYSTEM');
     return matchesSearch && matchesActor;
   });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sentinel-border">
         <div>
@@ -47,9 +58,19 @@ export const AuditPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-3 py-1.5 rounded-lg">
-          <Lock className="w-3.5 h-3.5" />
-          <span>TAMPER-RESISTANT LOGGING ACTIVE</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-3 py-1.5 rounded-lg">
+            <Lock className="w-3.5 h-3.5" />
+            <span>AUDIT LOG ACTIVE</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearAudit}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-900/60 bg-red-950/30 text-red-300 text-xs font-mono hover:bg-red-900/40 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Audit</span>
+          </button>
         </div>
       </div>
 
@@ -73,11 +94,10 @@ export const AuditPage: React.FC = () => {
             <button
               key={a}
               onClick={() => setActorFilter(a)}
-              className={`px-3 py-1 rounded capitalize transition-colors cursor-pointer ${
-                actorFilter === a
-                  ? 'bg-sentinel-accent text-slate-950 font-bold'
-                  : 'bg-sentinel-surface text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded capitalize transition-colors cursor-pointer ${actorFilter === a
+                ? 'bg-sentinel-accent text-slate-950 font-bold'
+                : 'bg-sentinel-surface text-slate-400 hover:text-white'
+                }`}
             >
               {a}
             </button>
@@ -154,6 +174,15 @@ export const AuditPage: React.FC = () => {
                     <span className="text-[10px] text-slate-600">
                       (+{entry.relativeTime}s)
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAudit(entry.id)}
+                      className="p-1.5 rounded text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors"
+                      title="Delete this audit entry"
+                      aria-label={`Delete audit entry ${entry.id}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               );

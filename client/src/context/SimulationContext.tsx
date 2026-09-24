@@ -25,6 +25,8 @@ interface SimulationContextType {
   metrics: AnalyticsMetrics | null;
   agents: AgentDefinition[];
   connected: boolean;
+  activeAlert: IncidentAlert | null;
+  dismissAlert: () => void;
   // Controls
   startScenario: (scenarioId: string) => void;
   addEvent: (event: SafetyEventSubmission) => void;
@@ -37,7 +39,16 @@ interface SimulationContextType {
   addOperatorNote: (incidentId: string, note: string) => void;
   toggleRecommendationStep: (incidentId: string, stepId: string) => void;
   deleteIncident: (incidentId: string) => Promise<void>;
+  clearAuditLog: () => Promise<void>;
+  deleteAuditEntry: (auditId: string) => Promise<void>;
   refreshMetrics: () => void;
+}
+
+export interface IncidentAlert {
+  id: string;
+  title: string;
+  zone: string;
+  severity: Incident['severity'];
 }
 
 const BACKEND_URL = 'http://localhost:4000';
@@ -47,6 +58,7 @@ const SimulationContext = createContext<SimulationContextType | undefined>(undef
 export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState<boolean>(false);
+  const [activeAlert, setActiveAlert] = useState<IncidentAlert | null>(null);
 
   const [state, setState] = useState<SimulationState>({
     scenarioId: '',
@@ -152,6 +164,43 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     s.on('incident.created', (incident: Incident) => {
       setIncidents(prev => [incident, ...prev.filter(i => i.id !== incident.id)]);
       setSelectedIncidentId(incident.id);
+      const alert = {
+        id: incident.id,
+        title: incident.title,
+        zone: incident.zone,
+        severity: incident.severity
+      } satisfies IncidentAlert;
+      setActiveAlert(alert);
+
+      try {
+        const audioContext = new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.frequency.value = incident.severity === 'critical' ? 880 : 660;
+        oscillator.type = 'sine';
+        gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.28);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.3);
+        window.setTimeout(() => audioContext.close(), 500);
+      } catch {
+        // Browser audio can be blocked until the operator interacts with the page.
+      }
+
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('Sentinel incident detected', { body: `${incident.title} in ${incident.zone}` });
+        } else if (Notification.permission === 'default') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification('Sentinel incident detected', { body: `${incident.title} in ${incident.zone}` });
+            }
+          }).catch(() => { });
+        }
+      }
     });
 
     s.on('incident.updated', (incident: Incident) => {
@@ -176,6 +225,14 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     s.on('audit.created', (audit: AuditEntry) => {
       setAuditLog(prev => [audit, ...prev]);
+    });
+
+    s.on('audit.cleared', () => {
+      setAuditLog([]);
+    });
+
+    s.on('audit.deleted', (auditId: string) => {
+      setAuditLog(previous => previous.filter(entry => entry.id !== auditId));
     });
 
     setSocket(s);
@@ -282,9 +339,31 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setEvents(previous => previous.filter(event => !incidents.find(incident => incident.id === incidentId)?.eventIds.includes(event.id)));
   };
 
+  const clearAuditLog = async () => {
+    if (socket) {
+      socket.emit('operator.clearAudit');
+      return;
+    }
+    const response = await fetch(`${BACKEND_URL}/api/audit`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(await response.text());
+    setAuditLog([]);
+  };
+
+  const deleteAuditEntry = async (auditId: string) => {
+    if (socket) {
+      socket.emit('operator.deleteAudit', { auditId });
+      return;
+    }
+    const response = await fetch(`${BACKEND_URL}/api/audit/${encodeURIComponent(auditId)}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(await response.text());
+    setAuditLog(previous => previous.filter(entry => entry.id !== auditId));
+  };
+
   const refreshMetrics = () => {
     fetch(`${BACKEND_URL}/api/analytics/metrics`).then(r => r.json()).then(setMetrics).catch(() => { });
   };
+
+  const dismissAlert = () => setActiveAlert(null);
 
   return (
     <SimulationContext.Provider value={{
@@ -300,6 +379,8 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       metrics,
       agents,
       connected,
+      activeAlert,
+      dismissAlert,
       startScenario,
       addEvent,
       pauseSimulation,
@@ -311,6 +392,8 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       addOperatorNote,
       toggleRecommendationStep,
       deleteIncident,
+      clearAuditLog,
+      deleteAuditEntry,
       refreshMetrics
     }}>
       {children}

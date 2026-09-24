@@ -74,6 +74,19 @@ export class ScenarioEngine {
     return this.auditLog;
   }
 
+  public async clearAuditLog(): Promise<void> {
+    await (this.persistence?.clearAuditLog() || Promise.resolve());
+    this.auditLog = [];
+  }
+
+  public async deleteAuditEntry(auditId: string): Promise<boolean> {
+    const auditIndex = this.auditLog.findIndex(entry => entry.id === auditId);
+    if (auditIndex === -1) return false;
+    await (this.persistence?.deleteAuditEntry(auditId) || Promise.resolve());
+    this.auditLog.splice(auditIndex, 1);
+    return true;
+  }
+
   public async deleteIncident(incidentId: string): Promise<boolean> {
     const incidentIndex = this.incidents.findIndex(incident => incident.id === incidentId);
     if (incidentIndex === -1) return false;

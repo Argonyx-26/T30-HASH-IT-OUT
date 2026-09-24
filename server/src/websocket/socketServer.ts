@@ -102,6 +102,29 @@ export class SocketServer {
           });
         }
       });
+
+      socket.on('operator.clearAudit', async () => {
+        try {
+          await this.engine.clearAuditLog();
+          this.io.emit('audit.cleared');
+        } catch (error) {
+          socket.emit('operator.clearAudit.error', {
+            message: error instanceof Error ? error.message : 'Audit log deletion failed'
+          });
+        }
+      });
+
+      socket.on('operator.deleteAudit', async (data) => {
+        try {
+          const deleted = await this.engine.deleteAuditEntry(data.auditId);
+          if (deleted) this.io.emit('audit.deleted', data.auditId);
+        } catch (error) {
+          socket.emit('operator.deleteAudit.error', {
+            auditId: data.auditId,
+            message: error instanceof Error ? error.message : 'Audit entry deletion failed'
+          });
+        }
+      });
     });
   }
 

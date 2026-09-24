@@ -12,6 +12,7 @@ import { SimulationPage } from './pages/SimulationPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditPage } from './pages/AuditPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { IncidentAlertToast } from './components/IncidentAlertToast';
 
 export const App: React.FC = () => {
   return (
@@ -20,6 +21,7 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <div className="min-h-screen bg-sentinel-bg text-slate-100 flex flex-col font-sans transition-colors duration-300">
             <Navbar />
+            <IncidentAlertToast />
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<LandingPage />} />

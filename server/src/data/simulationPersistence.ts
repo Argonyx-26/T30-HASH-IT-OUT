@@ -1,7 +1,17 @@
 import { AuditEntry, Incident, SafetyEvent } from '../types';
 import { SupabaseRestClient } from './supabaseRestClient';
 
-type StoredIncident = Incident & { inserted_at?: string };
+type StoredIncident = Incident & {
+  inserted_at?: string;
+  confidence_trajectory?: Incident['confidenceTrajectory'];
+  created_at?: string;
+  created_relative_time?: number;
+  updated_at?: string;
+  event_ids?: string[];
+  evidence_summary?: Incident['evidenceSummary'];
+  operator_notes?: Incident['operatorNotes'];
+  audit_entries?: Incident['auditEntries'];
+};
 
 type StoredEvent = SafetyEvent & {
   source_type?: SafetyEvent['sourceType'];
@@ -31,13 +41,20 @@ export class SimulationPersistence {
     return {
       incidents: incidents.map(incident => ({
         ...incident,
-        confidenceTrajectory: incident.confidenceTrajectory || (incident as unknown as { confidence_trajectory: Incident['confidenceTrajectory'] }).confidence_trajectory,
-        createdAt: incident.createdAt || (incident as unknown as { created_at: string }).created_at,
-        createdRelativeTime: incident.createdRelativeTime ?? (incident as unknown as { created_relative_time: number }).created_relative_time,
-        updatedAt: incident.updatedAt || (incident as unknown as { updated_at: string }).updated_at,
-        eventIds: incident.eventIds || (incident as unknown as { event_ids: string[] }).event_ids,
-        events: incident.events || []
-        , metrics: incident.metrics || {
+        confidenceTrajectory: incident.confidenceTrajectory || incident.confidence_trajectory || [],
+        createdAt: incident.createdAt || incident.created_at || '',
+        createdRelativeTime: incident.createdRelativeTime ?? incident.created_relative_time ?? 0,
+        updatedAt: incident.updatedAt || incident.updated_at || incident.createdAt || incident.created_at || '',
+        eventIds: incident.eventIds || incident.event_ids || [],
+        events: incident.events || [],
+        evidenceSummary: incident.evidenceSummary || incident.evidence_summary || {
+          confirmed: [],
+          supporting: [],
+          unknown: []
+        },
+        operatorNotes: incident.operatorNotes || incident.operator_notes || [],
+        auditEntries: incident.auditEntries || incident.audit_entries || [],
+        metrics: incident.metrics || {
           relatedSourceCount: incident.events?.length || 0,
           sourceTypes: [],
           evidenceCompletenessPercent: 0,
@@ -130,5 +147,15 @@ export class SimulationPersistence {
     await this.database.remove('safety_events', `incident_id=eq.${encodedId}`);
     await this.database.remove('audit_entries', `incident_id=eq.${encodedId}`);
     await this.database.remove('incidents', `id=eq.${encodedId}`);
+  }
+
+  public async clearAuditLog(): Promise<void> {
+    if (!this.database.isConfigured) return;
+    await this.database.remove('audit_entries', 'id=not.is.null');
+  }
+
+  public async deleteAuditEntry(auditId: string): Promise<void> {
+    if (!this.database.isConfigured) return;
+    await this.database.remove('audit_entries', `id=eq.${encodeURIComponent(auditId)}`);
   }
 }
