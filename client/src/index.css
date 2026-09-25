@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --sentinel-bg: 10 13 19;
+    --sentinel-card: 17 22 34;
+    --sentinel-surface: 22 29 45;
+    --sentinel-border: 31 41 61;
+    --sentinel-hover: 26 34 53;
+    --sentinel-accent: 0 210 255;
+    --sentinel-accent-glow: 0 210 255;
+    --bg-primary: #0a0d13;
+    --bg-card: #111622;
+    --bg-surface: #161d2d;
+    --border-color: #1f293d;
+    --text-primary: #f1f5f9;
+    --text-muted: #8e9bb0;
+  }
+
+  .light {
+    --sentinel-bg: 248 250 252;
+    --sentinel-card: 255 255 255;
+    --sentinel-surface: 241 245 249;
+    --sentinel-border: 203 213 225;
+    --sentinel-hover: 226 232 240;
+    --sentinel-accent: 2 132 199;
+    --sentinel-accent-glow: 2 132 199;
+    --bg-primary: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-surface: #f1f5f9;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  .light .text-slate-100 {
+    color: #0f172a;
+  }
+
+  .light .text-slate-200 {
+    color: #1e293b;
+  }
+
+  .light .text-slate-300 {
+    color: #334155;
+  }
+
+  .light .text-slate-400 {
+    color: #475569;
+  }
+
+  .light .text-slate-500 {
+    color: #64748b;
+  }
+
+  .light .text-slate-600 {
+    color: #94a3b8;
+  }
+
+  .light .bg-slate-900 {
+    background-color: #e2e8f0;
+  }
+
+  .light .bg-slate-800 {
+    background-color: #e2e8f0;
+  }
+
+  .light .border-slate-800 {
+    border-color: #cbd5e1;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #25334d;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Grid & glow helpers */
+.grid-bg {
+  background-size: 28px 28px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.radar-sweep {
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 210, 255, 0.15) 60deg, transparent 60.1deg);
+  animation: sweep 4s linear infinite;
+}
+
+@keyframes sweep {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
