@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import {
-  FileText,
-  Search,
-  Filter,
-  ShieldCheck,
-  User,
-  Cpu,
-  Activity,
-  Clock,
-  ArrowUpRight,
-  Lock,
-  Trash2
-} from 'lucide-react';
+import { Search, Filter, Trash2, Clock3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AuditPage: React.FC = () => {
@@ -42,146 +30,104 @@ export const AuditPage: React.FC = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-sentinel-border">
-        <div>
-          <div className="flex items-center gap-2">
-            <FileText className="w-6 h-6 text-sentinel-accent" />
-            <h1 className="text-xl sm:text-2xl font-mono font-bold text-slate-100">
-              EXPLAINABILITY & IMMUTABLE AUDIT TRAIL
-            </h1>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-slate-400">Activity</p>
+            <h1 className="mt-1 text-2xl font-semibold text-white">Audit Log</h1>
           </div>
-          <p className="text-xs font-sans text-slate-400 mt-0.5">
-            Cryptographically Ordered Record of System Inferences, Algorithmic Correlation, and Operator Decisions
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-3 py-1.5 rounded-lg">
-            <Lock className="w-3.5 h-3.5" />
-            <span>AUDIT LOG ACTIVE</span>
-          </div>
           <button
             type="button"
             onClick={handleClearAudit}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-900/60 bg-red-950/30 text-red-300 text-xs font-mono hover:bg-red-900/40 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-800 bg-red-950/40 px-3 py-2 text-sm text-red-300 transition hover:bg-red-900/50"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear Audit</span>
+            <Trash2 className="h-4 w-4" />
+            Clear log
           </button>
         </div>
-      </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-sentinel-card border border-sentinel-border">
-        <div className="flex items-center gap-2 flex-1 max-w-md bg-sentinel-surface px-3 py-2 rounded-lg border border-sentinel-border">
-          <Search className="w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search audit actions, incident IDs, or details..."
-            className="w-full bg-transparent text-xs text-slate-200 placeholder-slate-500 focus:outline-none font-mono"
-          />
-        </div>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <label className="flex flex-1 items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
+            <Search className="h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search actions or incident IDs"
+              className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none"
+            />
+          </label>
 
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-slate-400">Actor:</span>
-          {['all', 'operator', 'agent', 'system'].map((a) => (
-            <button
-              key={a}
-              onClick={() => setActorFilter(a)}
-              className={`px-3 py-1 rounded capitalize transition-colors cursor-pointer ${actorFilter === a
-                ? 'bg-sentinel-accent text-slate-950 font-bold'
-                : 'bg-sentinel-surface text-slate-400 hover:text-white'
-                }`}
+          <label className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select
+              value={actorFilter}
+              onChange={(e) => setActorFilter(e.target.value)}
+              className="bg-transparent text-sm text-white focus:outline-none"
             >
-              {a}
-            </button>
-          ))}
+              <option value="all" className="bg-slate-900">All</option>
+              <option value="operator" className="bg-slate-900">Operator</option>
+              <option value="agent" className="bg-slate-900">Agent</option>
+              <option value="system" className="bg-slate-900">System</option>
+            </select>
+          </label>
         </div>
       </div>
 
-      {/* Audit Log Table / Stream */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-sentinel-card border border-sentinel-border shadow-xl">
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-sentinel-border text-xs font-mono text-slate-400">
-          <span>EVENT & INFERENCE LOG ({filteredLog.length} RECORDS)</span>
-          <span>RUNTIME SIMULATION TIMESTAMPS</span>
-        </div>
-
+      <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-2 sm:p-3">
         {filteredLog.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 font-mono text-xs">
-            No audit records match the current filter criteria.
+          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 px-4 py-10 text-center text-sm text-slate-400">
+            No audit records match the current filters.
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {filteredLog.map((entry) => {
-              const isOperator = entry.actor === 'OPERATOR';
-              const isAgent = entry.actor.includes('AGENT');
-
-              let actorBadge = 'bg-slate-800 text-slate-300 border-slate-700';
-              if (isOperator) actorBadge = 'bg-purple-950/60 text-purple-300 border-purple-800/60';
-              if (isAgent) actorBadge = 'bg-cyan-950/60 text-cyan-300 border-cyan-800/60';
+              const actorTone = entry.actor === 'OPERATOR'
+                ? 'bg-violet-950/60 text-violet-200 border-violet-800/60'
+                : entry.actor.includes('AGENT')
+                  ? 'bg-cyan-950/60 text-cyan-200 border-cyan-800/60'
+                  : 'bg-slate-800 text-slate-200 border-slate-700';
 
               return (
                 <div
                   key={entry.id}
-                  className="p-3.5 rounded-xl bg-sentinel-surface border border-sentinel-border hover:border-slate-600 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs"
+                  className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-[120px_120px_1fr_auto] sm:items-start"
                 >
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0 mt-0.5">
-                      {isOperator ? (
-                        <User className="w-4 h-4 text-purple-400" />
-                      ) : isAgent ? (
-                        <Cpu className="w-4 h-4 text-cyan-400" />
-                      ) : (
-                        <Activity className="w-4 h-4 text-slate-400" />
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2 font-mono">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${actorBadge}`}>
-                          {entry.actor}
-                        </span>
-                        <span className="font-bold text-slate-200">
-                          {entry.action}
-                        </span>
-                        {entry.incidentId && (
-                          <Link
-                            to={`/incidents/${entry.incidentId}`}
-                            className="text-sentinel-accent hover:underline flex items-center gap-0.5"
-                          >
-                            <span>[{entry.incidentId}]</span>
-                            <ArrowUpRight className="w-3 h-3" />
-                          </Link>
-                        )}
-                      </div>
-                      <p className="text-slate-300 font-sans text-xs leading-relaxed">
-                        {entry.details}
-                      </p>
-                    </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <Clock3 className="h-3.5 w-3.5 text-slate-500" />
+                    <span>{entry.timestamp}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500 shrink-0 self-end md:self-center">
-                    <Clock className="w-3 h-3 text-cyan-400" />
-                    <span className="text-slate-300 font-bold bg-sentinel-bg px-2 py-1 rounded border border-sentinel-border/50">
-                      {entry.timestamp}
+                  <div>
+                    <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-medium uppercase tracking-wide ${actorTone}`}>
+                      {entry.actor}
                     </span>
-                    <span className="text-[10px] text-slate-600">
-                      (+{entry.relativeTime}s)
-                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-white">{entry.action}</div>
+                    <p className="mt-1 text-sm text-slate-300">{entry.details}</p>
+                    {entry.incidentId && (
+                      <Link
+                        to={`/incidents/${entry.incidentId}`}
+                        className="mt-2 inline-block text-xs text-cyan-300 hover:text-cyan-200"
+                      >
+                        Incident {entry.incidentId}
+                      </Link>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end">
                     <button
                       type="button"
                       onClick={() => handleDeleteAudit(entry.id)}
-                      className="p-1.5 rounded text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors"
+                      className="rounded-lg border border-slate-700 p-2 text-slate-400 transition hover:border-red-700 hover:text-red-300"
                       title="Delete this audit entry"
                       aria-label={`Delete audit entry ${entry.id}`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -190,7 +136,6 @@ export const AuditPage: React.FC = () => {
           </div>
         )}
       </div>
-
     </div>
   );
 };
