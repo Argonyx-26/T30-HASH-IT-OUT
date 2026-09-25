@@ -121,6 +121,9 @@ export class ScenarioEngine {
   public startScenario(scenarioId: string, isJudgeDemo: boolean = false, autoPlay: boolean = true): SimulationState {
     this.stopTimer();
     this.emittedEventIndices.clear();
+    this.activeEvents = [];
+    this.incidents = [];
+    this.auditLog = [];
     this.simulationRunId = `run-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     const scenario = SCENARIOS.find(s => s.id === scenarioId);
     if (!scenario) {
@@ -180,6 +183,8 @@ export class ScenarioEngine {
     this.stopTimer();
     this.emittedEventIndices.clear();
     this.activeEvents = [];
+    this.incidents = [];
+    this.auditLog = [];
     this.state = {
       scenarioId: '',
       scenarioName: 'No situation loaded',

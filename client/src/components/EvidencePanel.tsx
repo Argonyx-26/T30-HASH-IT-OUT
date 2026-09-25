@@ -35,79 +35,92 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ incident, classNam
     );
   }
 
-  const categoryLabel = categoryLabels[incident.category];
-  const sourceTypeCount = new Set(incident.events.map(event => event.sourceType)).size;
-  const hasIndependentConfirmation = sourceTypeCount >= 2;
-  const evidenceItems = [...incident.evidenceSummary.confirmed, ...incident.evidenceSummary.supporting];
-  const evidenceByEventId = new Map(evidenceItems.map(item => [item.id.replace(/^ev-/, ''), item]));
+  const relevantEvents = [...incident.events]
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 5);
+
+  const getSensorLabel = (source: string): string => source.toUpperCase();
+
+  const getShortEvidence = (event: Incident['events'][number]): string => event.evidence;
+
+  const sensorNames = relevantEvents.map(event => getSensorLabel(event.source));
+  const responseSummary = incident.recommendations.slice(0, 3).map(r => r.action);
 
   return (
-    <div className={`p-5 rounded-xl bg-sentinel-card border border-sentinel-border space-y-5 ${className}`}>
-      <div className="flex items-center gap-2 pb-3 border-b border-sentinel-border">
-        <ShieldCheck className="w-4 h-4 text-cyan-400" />
-        <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">
-          How Sentinel Identified This Incident
-        </h3>
+    <div className={`w-full max-w-xl rounded-xl border border-slate-700 bg-[#071a2a] p-0 text-slate-100 shadow-2xl ${className}`}>
+      <div className="border-b border-slate-700 px-4 py-3 text-center">
+        <div className="font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-slate-300">SENTINEL</div>
       </div>
 
-      <div className="rounded-lg border border-cyan-800/50 bg-cyan-950/20 p-3">
-        <p className="text-sm leading-relaxed text-slate-200">
-          Sentinel predicted a <strong className="text-cyan-300">possible {categoryLabel}</strong> in <strong className="text-slate-100">{incident.zone}</strong> using {incident.events.length} recorded sensor signal{incident.events.length === 1 ? '' : 's'}.
-          {' '}
-          {hasIndependentConfirmation
-            ? `${sourceTypeCount} different sensor types reported related activity, so the prediction is supported by multiple sources.`
-            : 'It is still provisional because only one sensor type has reported it so far.'}
-        </p>
-      </div>
-
-      <section className="space-y-2">
-        <div className="flex items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wide text-slate-300">
-          <Radio className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Sensor data used</span>
+      <div className="px-4 py-4">
+        <div className="mb-4 text-center font-mono text-[15px] font-bold uppercase tracking-wide text-slate-100">
+          {incident.title.toUpperCase()}
         </div>
-        <div className="space-y-2">
-          {incident.events.map(event => (
-            <div key={event.id} className="rounded-lg bg-sentinel-surface border border-sentinel-border p-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-slate-200">
-                  {event.source} detected {eventLabels[event.eventType]}
-                </span>
-                <span className="shrink-0 text-xs font-mono text-cyan-300">
-                  {Math.round(event.confidence * 100)}% confidence
-                </span>
+
+        <div className="space-y-1 pb-3 text-sm font-mono text-slate-200">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-300">Severity</span>
+            <span className="font-bold text-slate-100">{incident.severity.toUpperCase()}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-300">Confidence</span>
+            <span className="font-bold text-cyan-300">{(incident.confidence * 100).toFixed(0)}%</span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-300">Location</span>
+            <span className="font-bold text-slate-100">{incident.zone}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-slate-700 pt-4">
+          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-300">
+            CORRELATED SENSOR EVIDENCE
+          </div>
+
+          <div className="space-y-3">
+            {relevantEvents.map(event => (
+              <div key={event.id} className="space-y-1">
+                <div className="flex items-center gap-2 font-mono text-[12px] font-bold uppercase text-slate-100">
+                  <span className="text-emerald-400">✓</span>
+                  <span>{getSensorLabel(event.source)}</span>
+                </div>
+                <div className="pl-5 text-sm text-slate-300">{getShortEvidence(event)}</div>
+                <div className="pl-5 font-mono text-[11px] text-cyan-300">Confidence: {Math.round(event.confidence * 100)}%</div>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                {event.evidence}
-              </p>
-              <p className="mt-1 text-xs font-mono text-emerald-300">
-                Added {evidenceByEventId.get(event.id)?.confidenceContribution ?? Math.round(event.confidence * 20)}% to the incident assessment
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </section>
 
-      <section className="space-y-2 border-t border-sentinel-border/60 pt-4">
-        <div className="flex items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wide text-emerald-400">
-          <CheckCircle className="w-3.5 h-3.5" />
-          <span>What these signals mean together</span>
+        <div className="mt-4 border-t border-slate-700 pt-4">
+          <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-300">
+            CORRELATION ANALYSIS
+          </div>
+          <div className="text-sm leading-relaxed text-slate-200">
+            {relevantEvents.length} independent sensor signals support the same event.
+          </div>
+          <div className="mt-2 text-sm leading-relaxed text-slate-200">
+            {sensorNames.join(' + ')}
+          </div>
+          <div className="mt-1 text-center text-xs text-slate-400">↓</div>
+          <div className="text-center font-mono text-[12px] font-bold uppercase tracking-wide text-slate-100">
+            {incident.title.toUpperCase()}
+          </div>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300">{incident.summary}</p>
-        <p className="text-sm leading-relaxed text-slate-300">
-          Combined incident confidence is <strong className="text-cyan-300">{(incident.confidence * 100).toFixed(0)}%</strong>, so Sentinel is currently treating this as a <strong className="text-cyan-300">{categoryLabel}</strong>, not a confirmed final fact.
-        </p>
-      </section>
 
-      <section className="space-y-2 border-t border-sentinel-border/60 pt-4">
-        <div className="flex items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wide text-purple-300">
-          <HelpCircle className="w-3.5 h-3.5" />
-          <span>Still needed before confirmation</span>
+        <div className="mt-4 border-t border-slate-700 pt-4">
+          <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-violet-300">
+            RECOMMENDED RESPONSE
+          </div>
+          <ul className="space-y-2 text-sm text-slate-200">
+            {responseSummary.map((step, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="mt-1 text-cyan-300">•</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300">{incident.explanation.whatIsUncertain}</p>
-        <p className="text-xs leading-relaxed text-slate-400">
-          The assessment would change with: {incident.explanation.whatWouldChangeAssessment}
-        </p>
-      </section>
+      </div>
     </div>
   );
 };

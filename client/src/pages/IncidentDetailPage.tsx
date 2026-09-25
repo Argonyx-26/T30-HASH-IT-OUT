@@ -20,8 +20,8 @@ import {
 
 export const IncidentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { incidents, auditLog } = useSimulation();
-  const [activeTab, setActiveTab] = useState<'overview' | 'evidence' | 'graph' | 'response' | 'audit'>('overview');
+  const { incidents } = useSimulation();
+  const [activeTab, setActiveTab] = useState<'evidence' | 'graph' | 'response'>('evidence');
   const [explainabilityOpen, setExplainabilityOpen] = useState(false);
 
   const incident = incidents.find(i => i.id === id) || (incidents.length > 0 ? incidents[0] : null);
@@ -43,8 +43,6 @@ export const IncidentDetailPage: React.FC = () => {
       </div>
     );
   }
-
-  const caseAudit = auditLog.filter(a => a.incidentId === incident.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -94,11 +92,9 @@ export const IncidentDetailPage: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex items-center gap-1 border-b border-sentinel-border overflow-x-auto pb-1 text-xs font-mono">
         {[
-          { key: 'overview', label: 'Overview', icon: Activity },
           { key: 'evidence', label: `Evidence (${incident.events.length})`, icon: Eye },
           { key: 'graph', label: 'Situation Graph', icon: Layers },
           { key: 'response', label: 'Response Checklist', icon: CheckCircle2 },
-          { key: 'audit', label: `Audit Trail (${caseAudit.length})`, icon: FileText },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -122,34 +118,7 @@ export const IncidentDetailPage: React.FC = () => {
       {/* Tab Panels */}
       <div className="space-y-6">
         
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 space-y-6">
-              {/* Executive Summary */}
-              <div className="p-5 rounded-xl bg-sentinel-card border border-sentinel-border space-y-3">
-                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Operational Executive Summary
-                </h3>
-                <p className="text-sm text-slate-300 font-sans leading-relaxed">
-                  {incident.summary}
-                </p>
-                <div className="p-3 rounded-lg bg-sentinel-surface border border-sentinel-border/50 text-xs font-mono text-slate-400 space-y-1">
-                  <div><strong>Spatial Anchor:</strong> {incident.location} ({incident.zone})</div>
-                  <div><strong>Hazard Category:</strong> {incident.category.toUpperCase().replace('_', ' ')}</div>
-                  <div><strong>Current Status:</strong> {incident.status.toUpperCase()}</div>
-                </div>
-              </div>
-
-            </div>
-
-            <div className="lg:col-span-4 space-y-6">
-              <EvidencePanel incident={incident} />
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: EVIDENCE */}
+        {/* TAB 1: EVIDENCE */}
         {activeTab === 'evidence' && (
           <div className="max-w-3xl">
             <EvidencePanel incident={incident} />
@@ -165,43 +134,6 @@ export const IncidentDetailPage: React.FC = () => {
         {activeTab === 'response' && (
           <div className="max-w-3xl mx-auto">
             <ResponseRecommendationPanel incident={incident} />
-          </div>
-        )}
-
-        {/* TAB 5: AUDIT */}
-        {activeTab === 'audit' && (
-          <div className="p-5 rounded-xl bg-sentinel-card border border-sentinel-border space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-sentinel-border">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">
-                Case File Audit History
-              </h3>
-              <span className="text-[10px] font-mono text-emerald-400">
-                TAMPER-EVIDENT LEDGER
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {caseAudit.length > 0 ? (
-                caseAudit.map((a) => (
-                  <div key={a.id} className="p-3 rounded-lg bg-sentinel-surface border border-sentinel-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="px-1.5 py-0.5 rounded bg-slate-900 text-sentinel-accent font-bold">
-                          {a.actor}
-                        </span>
-                        <span className="text-slate-200 font-semibold">{a.action}</span>
-                      </div>
-                      <p className="text-slate-400 font-sans text-xs">{a.details}</p>
-                    </div>
-                    <span className="text-slate-500 shrink-0">[{a.timestamp}]</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs font-mono text-slate-500 py-4 text-center">
-                  No specific audit events recorded for this incident yet.
-                </p>
-              )}
-            </div>
           </div>
         )}
 

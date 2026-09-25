@@ -77,8 +77,8 @@ export const SCENARIOS: SimulationScenario[] = [
     name: 'Restricted Access Breach',
     category: 'security_breach',
     description: 'After-hours breach near the BMS College of Engineering PG Block starting with perimeter disturbance followed by unauthorized badge scan and forced access.',
-    signalTypes: ['Perimeter Sensor', 'Badge Reader', 'Magnetic Lock Sensor', 'Corridor Cam'],
-    expectedOutcome: 'Consolidates 4 telemetry alerts into 1 Critical Security Incident with forced-entry confirmation and perimeter breach escalation.',
+    signalTypes: ['Perimeter Sensor', 'Badge Reader', 'Magnetic Lock Sensor', 'Corridor Cam', 'Security Dispatch Feed'],
+    expectedOutcome: 'Consolidates 5 telemetry alerts into 1 Critical Security Incident with forced-entry confirmation and perimeter breach escalation.',
     duration: 35,
     events: [
       {
@@ -106,6 +106,18 @@ export const SCENARIOS: SimulationScenario[] = [
         evidenceCategory: 'supporting'
       },
       {
+        relativeTime: 9,
+        source: 'Magnetic Lock Sensor ML-04',
+        sourceType: 'sensor',
+        zone: 'BMS College of Engineering PG Block',
+        location: 'South Perimeter Perimeter Fence',
+        eventType: 'access_violation',
+        severity: 'medium',
+        confidence: 0.78,
+        evidence: 'Lock status changed without authorized release sequence during after-hours window',
+        evidenceCategory: 'supporting'
+      },
+      {
         relativeTime: 10,
         source: 'Corridor Camera CC-03',
         sourceType: 'vision_optical',
@@ -116,6 +128,18 @@ export const SCENARIOS: SimulationScenario[] = [
         confidence: 0.96,
         evidence: 'Optical motion trace confirms forced entry through the restricted perimeter segment and unauthorized access into the service corridor',
         evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 13,
+        source: 'Security Dispatch Feed SD-17',
+        sourceType: 'operator_report',
+        zone: 'BMS College of Engineering PG Block',
+        location: 'South Perimeter Perimeter Fence',
+        eventType: 'access_violation',
+        severity: 'high',
+        confidence: 0.89,
+        evidence: 'Security dispatch confirms a perimeter breach and reports a person exiting the restricted segment against protocol',
+        evidenceCategory: 'confirmed'
       }
     ]
   },
@@ -124,8 +148,8 @@ export const SCENARIOS: SimulationScenario[] = [
     name: 'Plaza Crowd Surge Anomaly',
     category: 'crowd_safety',
     description: 'Spike in pedestrian density around the BMSCE PG Block and inner road choke point triggering velocity drop and assistance request.',
-    signalTypes: ['Optical Flow Cam', 'Choke Point Flow Sensor', 'Emergency Callbox'],
-    expectedOutcome: 'Generates crowd management recommendations prior to escalation without collecting any facial or identity data.',
+    signalTypes: ['Optical Flow Cam', 'Choke Point Flow Sensor', 'Emergency Callbox', 'Queue Density Sensor', 'Public Address Alert'],
+    expectedOutcome: 'Correlates 5 independent crowd signals into 1 high-confidence incident and recommends proactive crowd control before panic escalation.',
     duration: 30,
     events: [
       {
@@ -163,6 +187,30 @@ export const SCENARIOS: SimulationScenario[] = [
         confidence: 0.87,
         evidence: 'Assistance request reported congestion at the north gate choke point',
         evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 13,
+        source: 'Queue Density Sensor QD-04',
+        sourceType: 'sensor',
+        zone: 'BMSCE PG Block',
+        location: 'Central Atrium North Gate',
+        eventType: 'crowd_anomaly',
+        severity: 'high',
+        confidence: 0.85,
+        evidence: 'Queue length at the main gate grew 2.4x faster than expected over a 90-second window',
+        evidenceCategory: 'supporting'
+      },
+      {
+        relativeTime: 16,
+        source: 'Public Address Alert PA-06',
+        sourceType: 'building_system',
+        zone: 'BMSCE PG Block',
+        location: 'Central Atrium North Gate',
+        eventType: 'crowd_anomaly',
+        severity: 'medium',
+        confidence: 0.8,
+        evidence: 'Automated public announcement triggered to ease congestion and redirect foot traffic away from the choke point',
+        evidenceCategory: 'confirmed'
       }
     ]
   },
@@ -171,8 +219,8 @@ export const SCENARIOS: SimulationScenario[] = [
     name: 'HVAC Substation Overheat',
     category: 'equipment_failure',
     description: 'Mechanical vibration and thermal sensors correlate imminent equipment cooling failure near the Mechanical Block.',
-    signalTypes: ['Vibration Sensor', 'Core Thermal Probe', 'Coolant Loop Sensor'],
-    expectedOutcome: 'Early preventive incident flagged with elevated confidence before electrical trip occurs.',
+    signalTypes: ['Vibration Sensor', 'Core Thermal Probe', 'Coolant Loop Sensor', 'Electrical Load Monitor', 'Maintenance Alarm Panel'],
+    expectedOutcome: 'Five independent equipment indicators converge into one preventive incident before the mechanical block trips or overheats.',
     duration: 30,
     events: [
       {
@@ -209,6 +257,30 @@ export const SCENARIOS: SimulationScenario[] = [
         severity: 'high',
         confidence: 0.88,
         evidence: 'Coolant flow dropped below the minimum threshold for equipment cooling',
+        evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 12,
+        source: 'Electrical Load Monitor EL-14',
+        sourceType: 'building_system',
+        zone: 'Mechanical Block',
+        location: 'Substation Basement Bay 1',
+        eventType: 'equipment_overheat',
+        severity: 'high',
+        confidence: 0.86,
+        evidence: 'Electrical load rose 18% above nominal while coolant flow was falling, indicating thermal stress',
+        evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 15,
+        source: 'Maintenance Alarm Panel MA-06',
+        sourceType: 'alarm_panel',
+        zone: 'Mechanical Block',
+        location: 'Substation Basement Bay 1',
+        eventType: 'equipment_overheat',
+        severity: 'critical',
+        confidence: 0.9,
+        evidence: 'Maintenance alarm panel flagged premature wear and a rapid rise in compressor cycle pressure',
         evidenceCategory: 'confirmed'
       }
     ]
