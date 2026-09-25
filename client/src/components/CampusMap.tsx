@@ -117,9 +117,11 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
 
           {/* Render Buildings */}
           {zones.map((zone) => {
-            const isCritical = zone.status === 'critical';
-            const isElevated = zone.status === 'elevated';
-            const isWatch = zone.status === 'watch';
+            const hasCriticalIncident = incidents.some(inc => inc.zone === zone.name && (inc.severity === 'critical' || inc.status === 'critical'));
+            const hasElevatedIncident = incidents.some(inc => inc.zone === zone.name && (inc.severity === 'elevated' || inc.status === 'elevated'));
+            const isCritical = zone.status === 'critical' || hasCriticalIncident;
+            const isElevated = zone.status === 'elevated' || (!isCritical && hasElevatedIncident);
+            const isWatch = zone.status === 'watch' && !isCritical && !isElevated;
             const isSelected = selectedZoneName === zone.name || inspectedZone?.id === zone.id;
 
             // Fill & stroke styling
@@ -239,6 +241,15 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
             // Jitter positions slightly within building for realism
             const pinX = matchingZone.coordinates.x + 20 + ((idx * 28) % (matchingZone.coordinates.width - 40));
             const pinY = matchingZone.coordinates.y + matchingZone.coordinates.height - 18;
+            const isCritical = evt.severity === 'critical';
+            const isSelected = selectedEventId === evt.id;
+            const severityColor = evt.severity === 'critical'
+              ? '#ef4444'
+              : evt.severity === 'high'
+                ? '#f59e0b'
+                : evt.severity === 'medium'
+                  ? '#3b82f6'
+                  : '#94a3b8';
 
             return (
               <g
@@ -248,22 +259,23 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
                   clickEvent.stopPropagation();
                   handleEventClick(evt);
                 }}
-                className="cursor-pointer animate-pulse"
+                className="cursor-pointer"
                 role="button"
                 aria-label={`Inspect ${evt.eventType} from ${evt.source}`}
               >
-                <circle r="6" fill="rgba(239, 68, 68, 0.3)" />
-                <circle r="3.5" fill={selectedEventId === evt.id ? '#facc15' : '#ef4444'} />
-                <text
-                  x="8"
-                  y="3"
-                  fill="#fca5a5"
-                  fontSize="8"
-                  fontFamily="JetBrains Mono, monospace"
-                  fontWeight="bold"
-                >
-                  {evt.source.split(' ')[0]}
-                </text>
+                <circle
+                  r={isCritical ? 7 : 5.5}
+                  fill={isCritical ? 'rgba(239, 68, 68, 0.24)' : 'rgba(148, 163, 184, 0.18)'}
+                  stroke={isSelected ? '#facc15' : 'transparent'}
+                  strokeWidth={isSelected ? 1.5 : 0}
+                  className={isCritical ? 'animate-ping' : ''}
+                />
+                <circle
+                  r={isCritical ? 4.2 : 3.2}
+                  fill={severityColor}
+                  stroke={isCritical ? '#fca5a5' : 'rgba(255,255,255,0.35)'}
+                  strokeWidth={1}
+                />
               </g>
             );
           })}

@@ -78,7 +78,7 @@ export const SCENARIOS: SimulationScenario[] = [
     category: 'security_breach',
     description: 'After-hours breach near the BMS College of Engineering PG Block starting with perimeter disturbance followed by unauthorized badge scan and forced access.',
     signalTypes: ['Perimeter Sensor', 'Badge Reader', 'Magnetic Lock Sensor', 'Corridor Cam'],
-    expectedOutcome: 'Consolidates 4 telemetry alerts into 1 Elevated Security Incident with pinpointed physical access trace.',
+    expectedOutcome: 'Consolidates 4 telemetry alerts into 1 Critical Security Incident with forced-entry confirmation and perimeter breach escalation.',
     duration: 35,
     events: [
       {
@@ -112,9 +112,9 @@ export const SCENARIOS: SimulationScenario[] = [
         zone: 'BMS College of Engineering PG Block',
         location: 'South Perimeter Perimeter Fence',
         eventType: 'access_violation',
-        severity: 'high',
-        confidence: 0.86,
-        evidence: 'Optical motion trace shows entry through the restricted perimeter segment',
+        severity: 'critical',
+        confidence: 0.96,
+        evidence: 'Optical motion trace confirms forced entry through the restricted perimeter segment and unauthorized access into the service corridor',
         evidenceCategory: 'confirmed'
       }
     ]
