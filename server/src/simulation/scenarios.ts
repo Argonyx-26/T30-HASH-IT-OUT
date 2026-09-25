@@ -23,51 +23,51 @@ export const SCENARIOS: SimulationScenario[] = [
         evidenceCategory: 'confirmed'
       },
       {
-        relativeTime: 7,
-        source: 'Smoke Detector SD-04',
-        sourceType: 'building_system',
-        zone: 'New Classroom Block',
-        location: 'West Stairwell, Level 2',
-        eventType: 'smoke_report',
-        severity: 'high',
-        confidence: 0.84,
-        evidence: 'Particulate reading crossed the smoke threshold for 3 consecutive samples',
-        evidenceCategory: 'confirmed'
-      },
-      {
-        relativeTime: 10,
-        source: 'Manual Pull Station MP-02',
-        sourceType: 'alarm_panel',
-        zone: 'New Classroom Block',
-        location: 'West Stairwell, Level 2',
-        eventType: 'manual_alarm',
-        severity: 'critical',
-        confidence: 0.91,
-        evidence: 'Manual alarm pull station activated by an authorized occupant',
-        evidenceCategory: 'confirmed'
-      },
-      {
-        relativeTime: 13,
-        source: 'Safety Dispatch Report DR-01',
+        relativeTime: 9,
+        source: 'Campus Safety Dispatch',
         sourceType: 'operator_report',
         zone: 'New Classroom Block',
         location: 'West Stairwell, Level 2',
         eventType: 'smoke_report',
-        severity: 'high',
-        confidence: 0.86,
-        evidence: 'Campus safety dispatch reports visible smoke near the west stairwell landing',
-        evidenceCategory: 'confirmed'
+        severity: 'medium',
+        confidence: 0.74,
+        evidence: 'Student mobile call reported faint acrid odor and light haze near Stairwell 2',
+        evidenceCategory: 'supporting'
       },
       {
         relativeTime: 16,
-        source: 'Optical Flow Camera OFC-11',
+        source: 'Manual Pull Station MP-02',
+        sourceType: 'alarm_panel',
+        zone: 'New Classroom Block',
+        location: 'West Stairwell, Level 2 Exit',
+        eventType: 'manual_alarm',
+        severity: 'critical',
+        confidence: 0.99,
+        evidence: 'Physical glass-break pull station mechanical switch engaged',
+        evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 23,
+        source: 'Access Door Controller DC-08',
+        sourceType: 'access_control',
+        zone: 'New Classroom Block',
+        location: 'Emergency Egress West Door',
+        eventType: 'access_violation',
+        severity: 'medium',
+        confidence: 0.85,
+        evidence: 'Egress panic-hardware push bar triggered during active alarm cycle',
+        evidenceCategory: 'supporting'
+      },
+      {
+        relativeTime: 30,
+        source: 'Optical Density Cam C-03',
         sourceType: 'vision_optical',
         zone: 'New Classroom Block',
-        location: 'West Stairwell, Level 2',
-        eventType: 'smoke_report',
+        location: 'West Courtyard Perimeter',
+        eventType: 'crowd_anomaly',
         severity: 'high',
-        confidence: 0.89,
-        evidence: 'Optical feed detects smoke-like movement and occupant outflow at the stairwell',
+        confidence: 0.84,
+        evidence: 'Directional optical velocity shows 60+ individuals dispersing away from building footprint',
         evidenceCategory: 'supporting'
       }
     ]
@@ -78,7 +78,7 @@ export const SCENARIOS: SimulationScenario[] = [
     category: 'security_breach',
     description: 'After-hours breach near the BMS College of Engineering PG Block starting with perimeter disturbance followed by unauthorized badge scan and forced access.',
     signalTypes: ['Perimeter Sensor', 'Badge Reader', 'Magnetic Lock Sensor', 'Corridor Cam'],
-    expectedOutcome: 'Consolidates 4 telemetry alerts into 1 Critical Security Incident with forced-entry confirmation and perimeter breach escalation.',
+    expectedOutcome: 'Consolidates 4 telemetry alerts into 1 Elevated Security Incident with pinpointed physical access trace.',
     duration: 35,
     events: [
       {
@@ -94,28 +94,40 @@ export const SCENARIOS: SimulationScenario[] = [
         evidenceCategory: 'supporting'
       },
       {
-        relativeTime: 7,
-        source: 'Badge Reader BR-08',
+        relativeTime: 10,
+        source: 'Card Reader CR-03',
         sourceType: 'access_control',
         zone: 'BMS College of Engineering PG Block',
-        location: 'South Perimeter Perimeter Fence',
+        location: 'Server Room 102 Egress Door',
         eventType: 'access_violation',
         severity: 'medium',
-        confidence: 0.81,
-        evidence: 'Unrecognized badge attempt recorded immediately after perimeter motion',
-        evidenceCategory: 'supporting'
+        confidence: 0.89,
+        evidence: 'Unregistered RFID credential scan attempted 3 times within 15 seconds',
+        evidenceCategory: 'confirmed'
       },
       {
-        relativeTime: 10,
-        source: 'Corridor Camera CC-03',
-        sourceType: 'vision_optical',
+        relativeTime: 18,
+        source: 'Magnetic Door Sensor DS-07',
+        sourceType: 'building_system',
         zone: 'BMS College of Engineering PG Block',
-        location: 'South Perimeter Perimeter Fence',
+        location: 'Server Room 102 Egress Door',
         eventType: 'access_violation',
         severity: 'critical',
-        confidence: 0.96,
-        evidence: 'Optical motion trace confirms forced entry through the restricted perimeter segment and unauthorized access into the service corridor',
+        confidence: 0.98,
+        evidence: 'Door Forced Open (DFO) tamper circuit opened without valid authorization signal',
         evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 25,
+        source: 'Optical Flow Sensor Cam-14',
+        sourceType: 'vision_optical',
+        zone: 'BMS College of Engineering PG Block',
+        location: 'Corridor B Server Annex',
+        eventType: 'crowd_anomaly',
+        severity: 'medium',
+        confidence: 0.77,
+        evidence: 'Sudden optical motion cluster in unlit hallway corridor',
+        evidenceCategory: 'supporting'
       }
     ]
   },
@@ -141,27 +153,27 @@ export const SCENARIOS: SimulationScenario[] = [
         evidenceCategory: 'supporting'
       },
       {
-        relativeTime: 8,
-        source: 'Choke Point Flow Sensor CF-02',
-        sourceType: 'sensor',
+        relativeTime: 12,
+        source: 'Turnstile Array TA-02',
+        sourceType: 'access_control',
         zone: 'BMSCE PG Block',
-        location: 'Central Atrium North Gate',
-        eventType: 'crowd_anomaly',
-        severity: 'medium',
-        confidence: 0.83,
-        evidence: 'Average pedestrian velocity dropped below the safe movement threshold',
-        evidenceCategory: 'supporting'
-      },
-      {
-        relativeTime: 11,
-        source: 'Emergency Callbox CB-01',
-        sourceType: 'operator_report',
-        zone: 'BMSCE PG Block',
-        location: 'Central Atrium North Gate',
+        location: 'Main Entry Turnstiles',
         eventType: 'crowd_anomaly',
         severity: 'high',
-        confidence: 0.87,
-        evidence: 'Assistance request reported congestion at the north gate choke point',
+        confidence: 0.86,
+        evidence: 'Turnstile throughput stalled at 98% queue capacity with physical pressure sensors active',
+        evidenceCategory: 'confirmed'
+      },
+      {
+        relativeTime: 20,
+        source: 'Emergency Callbox CB-04',
+        sourceType: 'alarm_panel',
+        zone: 'BMSCE PG Block',
+        location: 'Plaza West Kiosk',
+        eventType: 'manual_alarm',
+        severity: 'high',
+        confidence: 0.95,
+        evidence: 'Pedestrian pressed physical blue-light assistance button requesting safety personnel',
         evidenceCategory: 'confirmed'
       }
     ]
@@ -188,27 +200,27 @@ export const SCENARIOS: SimulationScenario[] = [
         evidenceCategory: 'supporting'
       },
       {
-        relativeTime: 7,
-        source: 'Core Thermal Probe TP-09',
+        relativeTime: 11,
+        source: 'Core Thermal Sensor TH-18',
         sourceType: 'sensor',
         zone: 'Mechanical Block',
-        location: 'Substation Basement Bay 1',
-        eventType: 'equipment_overheat',
-        severity: 'medium',
-        confidence: 0.85,
-        evidence: 'Core temperature rose 14°C above the safe operating baseline',
-        evidenceCategory: 'supporting'
+        location: 'Transformer Unit 3',
+        eventType: 'thermal_anomaly',
+        severity: 'high',
+        confidence: 0.93,
+        evidence: 'Core coil temperature reading 84°C (thermal gradient +3.2°C/min)',
+        evidenceCategory: 'confirmed'
       },
       {
-        relativeTime: 10,
-        source: 'Coolant Loop Sensor CL-03',
+        relativeTime: 18,
+        source: 'Coolant Flow Switch FL-01',
         sourceType: 'building_system',
         zone: 'Mechanical Block',
-        location: 'Substation Basement Bay 1',
+        location: 'Primary Heat Exchanger Loop',
         eventType: 'equipment_overheat',
         severity: 'high',
-        confidence: 0.88,
-        evidence: 'Coolant flow dropped below the minimum threshold for equipment cooling',
+        confidence: 0.90,
+        evidence: 'Flow rate dropped below 12 L/min minimum operating tolerance',
         evidenceCategory: 'confirmed'
       }
     ]

@@ -9,13 +9,13 @@ export default {
     extend: {
       colors: {
         sentinel: {
-          bg: 'rgb(var(--sentinel-bg) / <alpha-value>)',
-          card: 'rgb(var(--sentinel-card) / <alpha-value>)',
-          surface: 'rgb(var(--sentinel-surface) / <alpha-value>)',
-          border: 'rgb(var(--sentinel-border) / <alpha-value>)',
-          hover: 'rgb(var(--sentinel-hover) / <alpha-value>)',
-          accent: 'rgb(var(--sentinel-accent) / <alpha-value>)',
-          accentGlow: 'rgb(var(--sentinel-accent-glow) / <alpha-value>)',
+          bg: '#0a0d13',
+          card: '#111622',
+          surface: '#161d2d',
+          border: '#1f293d',
+          hover: '#1a2235',
+          accent: '#00d2ff',
+          accentGlow: 'rgba(0, 210, 255, 0.15)',
           warning: '#f59e0b',
           critical: '#ef4444',
           success: '#10b981',

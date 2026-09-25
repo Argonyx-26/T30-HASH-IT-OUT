@@ -90,6 +90,12 @@ export const Navbar: React.FC = () => {
               <span className="font-semibold tracking-wide">SIMULATION MODE</span>
             </div>
 
+            {/* Online Sources Count */}
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sentinel-surface border border-sentinel-border text-xs font-mono text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{state.sourcesOnline} / {state.totalSources} ONLINE</span>
+            </div>
+
             {/* Simulated Dynamic Clock */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs font-mono text-sentinel-accent">
               <span className="text-slate-500 text-[10px]">SIM TIME</span>

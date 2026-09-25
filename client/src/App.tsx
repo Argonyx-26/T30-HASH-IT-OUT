@@ -4,14 +4,14 @@ import { ThemeProvider } from './context/ThemeContext';
 import { SimulationProvider } from './context/SimulationContext';
 import { Navbar } from './components/Navbar';
 
-import { LandingPage } from './pages/LandingPageCommand';
+import { LandingPage } from './pages/LandingPage';
 import { OperationsDashboard } from './pages/OperationsDashboard';
 import { IncidentsPage } from './pages/IncidentsPage';
 import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { SimulationPage } from './pages/SimulationPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditPage } from './pages/AuditPage';
-import { SettingsPage } from './pages/SettingsPageSimple';
+import { SettingsPage } from './pages/SettingsPage';
 import { IncidentAlertToast } from './components/IncidentAlertToast';
 
 export const App: React.FC = () => {

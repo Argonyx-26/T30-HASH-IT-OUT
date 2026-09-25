@@ -1,33 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { SafetyEvent } from '../types';
 import { StatusBadge } from './StatusBadge';
-import {
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  Flame,
-  Radio,
-  Bell,
-  KeyRound,
-  Users,
-  Sparkles,
-  AlertCircle
+import { 
+  Clock, 
+  ChevronDown, 
+  ChevronUp, 
+  Flame, 
+  Radio, 
+  Bell, 
+  KeyRound, 
+  Users, 
+  Sparkles, 
+  AlertCircle 
 } from 'lucide-react';
 
 interface EventTimelineProps {
   events: SafetyEvent[];
   className?: string;
   maxEvents?: number;
-  selectedEventId?: string;
-  onSelectEvent?: (eventId: string) => void;
 }
 
-export const EventTimeline: React.FC<EventTimelineProps> = ({ events, className = '', maxEvents = 10, selectedEventId, onSelectEvent }) => {
+export const EventTimeline: React.FC<EventTimelineProps> = ({ events, className = '', maxEvents = 10 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (selectedEventId) setExpandedId(selectedEventId);
-  }, [selectedEventId]);
 
   const toggleExpand = (id: string) => {
     setExpandedId(prev => (prev === id ? null : id));
@@ -77,11 +71,8 @@ export const EventTimeline: React.FC<EventTimelineProps> = ({ events, className 
                   <div className="w-1.5 h-1.5 rounded-full bg-sentinel-accent" />
                 </div>
 
-                <div
-                  onClick={() => {
-                    toggleExpand(evt.id);
-                    onSelectEvent?.(evt.id);
-                  }}
+                <div 
+                  onClick={() => toggleExpand(evt.id)}
                   className="p-2.5 rounded-lg bg-sentinel-surface border border-sentinel-border hover:border-sentinel-accent/50 cursor-pointer transition-all"
                 >
                   <div className="flex items-center justify-between gap-2">

@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import { CampusZone, SafetyEvent } from '../types';
+import { CampusZone } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { Building2, Radio, Users, Clock, AlertTriangle, ShieldCheck, X } from 'lucide-react';
 
 interface CampusMapProps {
   onSelectZone?: (zoneName: string) => void;
-  onSelectEvent?: (eventId: string) => void;
-  selectedEventId?: string;
   selectedZoneName?: string;
   className?: string;
 }
 
-export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEvent, selectedEventId, selectedZoneName, className = '' }) => {
+export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, selectedZoneName, className = '' }) => {
   const { zones, events, incidents, state } = useSimulation();
   const [inspectedZone, setInspectedZone] = useState<CampusZone | null>(null);
-  const selectedEvent = events.find(event => event.id === selectedEventId) || null;
 
   const handleBuildingClick = (zone: CampusZone) => {
     setInspectedZone(zone);
@@ -24,41 +21,9 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
     }
   };
 
-  const handleEventClick = (event: SafetyEvent) => {
-    const zone = zones.find(item => item.name.toLowerCase().includes(event.zone.toLowerCase()) || event.zone.toLowerCase().includes(item.name.toLowerCase()));
-    if (zone) setInspectedZone(zone);
-    onSelectEvent?.(event.id);
-
-    try {
-      const audioContext = new AudioContext();
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      oscillator.frequency.value = event.severity === 'critical' ? 880 : 620;
-      oscillator.type = 'sine';
-      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.24);
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.26);
-      window.setTimeout(() => audioContext.close(), 450);
-    } catch {
-      // Audio can be unavailable in browsers that block Web Audio.
-    }
-  };
-
   // Find recent events for building
   const getZoneEvents = (zoneName: string) => {
-    const zoneEvents = events.filter(e => e.zone.toLowerCase().includes(zoneName.toLowerCase()) || zoneName.toLowerCase().includes(e.zone.toLowerCase()));
-    const uniqueSignals = new Map<string, SafetyEvent>();
-
-    for (const event of zoneEvents) {
-      const signalKey = [event.source, event.eventType, event.zone, event.location, event.evidence].join('|');
-      if (!uniqueSignals.has(signalKey)) uniqueSignals.set(signalKey, event);
-    }
-
-    return [...uniqueSignals.values()].slice(0, 4);
+    return events.filter(e => e.zone.toLowerCase().includes(zoneName.toLowerCase()) || zoneName.toLowerCase().includes(e.zone.toLowerCase())).slice(0, 4);
   };
 
   return (
@@ -117,11 +82,9 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
 
           {/* Render Buildings */}
           {zones.map((zone) => {
-            const hasCriticalIncident = incidents.some(inc => inc.zone === zone.name && (inc.severity === 'critical' || inc.status === 'critical'));
-            const hasElevatedIncident = incidents.some(inc => inc.zone === zone.name && (inc.severity === 'elevated' || inc.status === 'elevated'));
-            const isCritical = zone.status === 'critical' || hasCriticalIncident;
-            const isElevated = zone.status === 'elevated' || (!isCritical && hasElevatedIncident);
-            const isWatch = zone.status === 'watch' && !isCritical && !isElevated;
+            const isCritical = zone.status === 'critical';
+            const isElevated = zone.status === 'elevated';
+            const isWatch = zone.status === 'watch';
             const isSelected = selectedZoneName === zone.name || inspectedZone?.id === zone.id;
 
             // Fill & stroke styling
@@ -241,41 +204,21 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
             // Jitter positions slightly within building for realism
             const pinX = matchingZone.coordinates.x + 20 + ((idx * 28) % (matchingZone.coordinates.width - 40));
             const pinY = matchingZone.coordinates.y + matchingZone.coordinates.height - 18;
-            const isCritical = evt.severity === 'critical';
-            const isSelected = selectedEventId === evt.id;
-            const severityColor = evt.severity === 'critical'
-              ? '#ef4444'
-              : evt.severity === 'high'
-                ? '#f59e0b'
-                : evt.severity === 'medium'
-                  ? '#3b82f6'
-                  : '#94a3b8';
 
             return (
-              <g
-                key={evt.id}
-                transform={`translate(${pinX}, ${pinY})`}
-                onClick={(clickEvent) => {
-                  clickEvent.stopPropagation();
-                  handleEventClick(evt);
-                }}
-                className="cursor-pointer"
-                role="button"
-                aria-label={`Inspect ${evt.eventType} from ${evt.source}`}
-              >
-                <circle
-                  r={isCritical ? 7 : 5.5}
-                  fill={isCritical ? 'rgba(239, 68, 68, 0.24)' : 'rgba(148, 163, 184, 0.18)'}
-                  stroke={isSelected ? '#facc15' : 'transparent'}
-                  strokeWidth={isSelected ? 1.5 : 0}
-                  className={isCritical ? 'animate-ping' : ''}
-                />
-                <circle
-                  r={isCritical ? 4.2 : 3.2}
-                  fill={severityColor}
-                  stroke={isCritical ? '#fca5a5' : 'rgba(255,255,255,0.35)'}
-                  strokeWidth={1}
-                />
+              <g key={evt.id} transform={`translate(${pinX}, ${pinY})`} className="pointer-events-none animate-pulse">
+                <circle r="6" fill="rgba(239, 68, 68, 0.3)" />
+                <circle r="3.5" fill="#ef4444" />
+                <text
+                  x="8"
+                  y="3"
+                  fill="#fca5a5"
+                  fontSize="8"
+                  fontFamily="JetBrains Mono, monospace"
+                  fontWeight="bold"
+                >
+                  {evt.source.split(' ')[0]}
+                </text>
               </g>
             );
           })}
@@ -288,107 +231,83 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
       </div>
 
       {/* Building Inspection Modal / Popover */}
-      {inspectedZone && (() => {
-        const zoneIncidents = incidents.filter(incident =>
-          incident.zone.toLowerCase() === inspectedZone.name.toLowerCase() ||
-          incident.zone.toLowerCase().includes(inspectedZone.name.toLowerCase()) ||
-          inspectedZone.name.toLowerCase().includes(incident.zone.toLowerCase())
-        );
-        const zoneSignals = getZoneEvents(inspectedZone.name);
+      {inspectedZone && (
+        <div className="mt-3 p-3.5 rounded-lg bg-sentinel-surface border border-sentinel-border transition-all animate-fadeIn">
+          <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-sentinel-accent" />
+              <h4 className="text-xs font-bold font-mono text-slate-100 uppercase">
+                Zone Telemetry: {inspectedZone.name}
+              </h4>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={inspectedZone.status} size="sm" />
+              <button
+                onClick={() => setInspectedZone(null)}
+                className="text-slate-400 hover:text-slate-100 p-0.5 rounded hover:bg-sentinel-hover"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
 
-        return (
-          <div className="mt-3 p-3.5 rounded-lg bg-sentinel-surface border border-sentinel-border transition-all animate-fadeIn">
-            <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-sentinel-accent" />
-                <h4 className="text-xs font-bold font-mono text-slate-100 uppercase">
-                  Zone Telemetry: {inspectedZone.name}
-                </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-xs">
+            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
+              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
+                <Radio className="w-3 h-3 text-cyan-400" />
+                <span>Active Sources</span>
               </div>
-              <div className="flex items-center gap-2">
-                <StatusBadge status={inspectedZone.status} size="sm" />
-                <button
-                  onClick={() => setInspectedZone(null)}
-                  className="text-slate-400 hover:text-slate-100 p-0.5 rounded hover:bg-sentinel-hover"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <p className="font-mono font-bold text-slate-100 mt-1">{inspectedZone.activeSources} Sensor Nodes</p>
             </div>
 
-            <div className="mt-3 rounded-lg border border-sentinel-border bg-sentinel-bg/60 p-3">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Correlation summary</p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-200">
-                {zoneIncidents.length > 0
-                  ? zoneIncidents[0].summary
-                  : zoneSignals.length > 0
-                    ? `Cross-modal signal convergence is building in ${inspectedZone.name}: ${zoneSignals
-                        .slice(0, 3)
-                        .map(signal => signal.eventType.replaceAll('_', ' '))
-                        .join(', ')} are aligning within the same spatial footprint.`
-                    : `No active incident correlation is yet forming in ${inspectedZone.name}. Sentinel is monitoring for a new cross-modal pattern.`}
+            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
+              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
+                <Users className="w-3 h-3 text-emerald-400" />
+                <span>Occupancy State</span>
+              </div>
+              <p className="font-mono font-bold text-slate-100 mt-1 uppercase">{inspectedZone.occupancyState}</p>
+            </div>
+
+            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
+              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
+                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <span>Correlated Incidents</span>
+              </div>
+              <p className="font-mono font-bold text-slate-100 mt-1">
+                {incidents.filter(i => i.zone === inspectedZone.name).length} Active
               </p>
             </div>
 
-            <div className="mt-3 border-t border-sentinel-border/60 pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Recent signals</p>
-                <span className="text-[10px] text-slate-500">{zoneSignals.length} tracked</span>
+            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
+              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
+                <Clock className="w-3 h-3 text-purple-400" />
+                <span>Last Telemetry Sync</span>
               </div>
+              <p className="font-mono font-bold text-slate-100 mt-1">{state.currentSimulatedClock}</p>
+            </div>
+          </div>
 
-              {zoneSignals.length > 0 ? (
-                <div className="space-y-1.5">
-                  {zoneSignals.map(signal => (
-                    <button
-                      key={signal.id}
-                      type="button"
-                      onClick={() => handleEventClick(signal)}
-                      className="flex w-full items-center justify-between rounded bg-sentinel-bg/50 px-2 py-1.5 text-left text-[11px] text-slate-300 hover:bg-sentinel-hover"
-                    >
-                      <span className="font-medium text-slate-200">{signal.eventType.replaceAll('_', ' ')}</span>
-                      <span className="text-cyan-300">{signal.severity}</span>
-                    </button>
-                  ))}
-                </div>
+          {/* Recent signals in zone */}
+          <div className="mt-3">
+            <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider">
+              Recent Signals Converging on Zone:
+            </span>
+            <div className="mt-1.5 space-y-1">
+              {getZoneEvents(inspectedZone.name).length > 0 ? (
+                getZoneEvents(inspectedZone.name).map((e) => (
+                  <div key={e.id} className="flex items-center justify-between text-[11px] font-mono p-1.5 rounded bg-sentinel-bg border border-sentinel-border/30">
+                    <span className="text-slate-300 font-semibold">{e.source}: {e.evidence}</span>
+                    <span className="text-cyan-400 text-[10px]">{e.timestamp}</span>
+                  </div>
+                ))
               ) : (
-                <p className="text-[11px] text-slate-500">No recent signals in this zone.</p>
+                <div className="text-[11px] font-mono text-slate-500 py-1 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  All sensor baselines nominal. Zero anomaly excursions.
+                </div>
               )}
             </div>
           </div>
-        );
-      })()}
-
-      {selectedEvent && (
-        <div className="mt-3 rounded-lg border border-amber-400/50 bg-amber-500/10 p-3.5 animate-fadeIn" role="alert">
-          <div className="flex items-center justify-between border-b border-amber-400/20 pb-2">
-            <div>
-              <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">Selected sensor event</p>
-              <h4 className="mt-0.5 font-mono text-sm font-bold text-slate-100">{selectedEvent.eventType.replaceAll('_', ' ')}</h4>
-            </div>
-            <span className="font-mono text-xs font-bold text-amber-200">{(selectedEvent.confidence * 100).toFixed(0)}% confidence</span>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-300 sm:grid-cols-4">
-            <span>Source: <strong>{selectedEvent.source}</strong></span>
-            <span>Time: <strong>{selectedEvent.timestamp}</strong></span>
-            <span>Zone: <strong>{selectedEvent.zone}</strong></span>
-            <span>Severity: <strong>{selectedEvent.severity}</strong></span>
-          </div>
-          <p className="mt-2 text-xs text-slate-200">{selectedEvent.evidence}</p>
-          {events.filter(event => event.id !== selectedEvent.id && Math.abs(event.relativeTime - selectedEvent.relativeTime) <= 5).length > 0 && (
-            <div className="mt-3 border-t border-amber-400/20 pt-2">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-amber-200">Signals detected at the same time</p>
-              <div className="mt-1.5 space-y-1">
-                {events
-                  .filter(event => event.id !== selectedEvent.id && Math.abs(event.relativeTime - selectedEvent.relativeTime) <= 5)
-                  .map(event => (
-                    <button type="button" key={event.id} onClick={() => handleEventClick(event)} className="flex w-full items-center justify-between rounded bg-sentinel-bg/70 px-2 py-1 text-left text-[11px] text-slate-300 hover:bg-sentinel-hover">
-                      <span>{event.eventType.replaceAll('_', ' ')} • {event.source}</span>
-                      <span className="text-cyan-300">{(event.confidence * 100).toFixed(0)}%</span>
-                    </button>
-                  ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

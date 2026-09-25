@@ -100,18 +100,11 @@ export class AnalyticsService {
     const state = this.engine.getState();
 
     return CAMPUS_ZONES.map(z => {
-      const zoneIncidents = incidents.filter(i => i.zone === z.name && i.status !== 'resolved');
-      const activeInc = zoneIncidents[0] || null;
+      const activeInc = incidents.find(i => i.zone === z.name && i.status !== 'resolved');
       const zoneEvents = events.filter(e => e.zone === z.name);
 
       let status: CampusZone['status'] = 'nominal';
-      if (zoneIncidents.some(i => i.severity === 'critical' || i.status === 'critical')) {
-        status = 'critical';
-      } else if (zoneIncidents.some(i => i.severity === 'elevated' || i.status === 'elevated')) {
-        status = 'elevated';
-      } else if (zoneIncidents.some(i => i.severity === 'watch' || i.status === 'watch')) {
-        status = 'watch';
-      } else if (activeInc) {
+      if (activeInc) {
         status = activeInc.severity;
       }
 
@@ -121,9 +114,9 @@ export class AnalyticsService {
         shortName: z.shortName,
         status,
         activeIncidentId: activeInc?.id,
-        activeSources: new Set(zoneEvents.map(event => event.source)).size,
+        activeSources: zoneEvents.length,
         recentEventsCount: zoneEvents.length,
-        occupancyState: status === 'critical' ? 'cleared' : 'low',
+        occupancyState: activeInc?.severity === 'critical' ? 'cleared' : 'low',
         lastUpdate: state.currentSimulatedClock,
         coordinates: z.coordinates
       };

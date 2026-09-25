@@ -17,19 +17,6 @@ export function createIncidentsRouter(engine: ScenarioEngine): Router {
     res.json(incident);
   });
 
-  router.post('/:id/recommendations/ai', async (req, res) => {
-    try {
-      const incident = await engine.generateAIRecommendations(req.params.id);
-      if (!incident) {
-        res.status(404).json({ error: 'Incident not found' });
-        return;
-      }
-      res.json(incident);
-    } catch (error) {
-      res.status(502).json({ error: error instanceof Error ? error.message : 'AI recommendation generation failed' });
-    }
-  });
-
   router.delete('/:id', async (req, res) => {
     try {
       const deleted = await engine.deleteIncident(req.params.id);

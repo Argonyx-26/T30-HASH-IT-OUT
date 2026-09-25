@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Flame, Radio, Bell, KeyRound, Users, Sparkles, ArrowRight, Cpu } from 'lucide-react';
-import { useSimulation } from '../context/SimulationContext';
 
 export const SignalConvergenceHero: React.FC = () => {
   const [step, setStep] = useState(0);
-  const { events, state } = useSimulation();
 
   // Auto-advance loop through stages for visual storytelling
   useEffect(() => {
@@ -15,14 +13,12 @@ export const SignalConvergenceHero: React.FC = () => {
   }, []);
 
   const signals = [
-    { eventType: 'thermal_anomaly', label: 'Thermal Anomaly', icon: Flame, color: 'text-amber-400', border: 'border-amber-500/40', source: 'TH-04 Sensor' },
-    { eventType: 'smoke_report', label: 'Smoke Report', icon: Radio, color: 'text-cyan-400', border: 'border-cyan-500/40', source: 'Campus Dispatch' },
-    { eventType: 'manual_alarm', label: 'Manual Alarm', icon: Bell, color: 'text-red-400', border: 'border-red-500/40', source: 'Pull Station MP-02' },
-    { eventType: 'access_violation', label: 'Access Event', icon: KeyRound, color: 'text-purple-400', border: 'border-purple-500/40', source: 'Door CR-08' },
-    { eventType: 'crowd_anomaly', label: 'Crowd Movement', icon: Users, color: 'text-emerald-400', border: 'border-emerald-500/40', source: 'Optical Cam C-03' },
+    { label: 'Thermal Anomaly', icon: Flame, color: 'text-amber-400', border: 'border-amber-500/40', source: 'TH-04 Sensor' },
+    { label: 'Smoke Report', icon: Radio, color: 'text-cyan-400', border: 'border-cyan-500/40', source: 'Campus Dispatch' },
+    { label: 'Manual Alarm', icon: Bell, color: 'text-red-400', border: 'border-red-500/40', source: 'Pull Station MP-02' },
+    { label: 'Access Event', icon: KeyRound, color: 'text-purple-400', border: 'border-purple-500/40', source: 'Door CR-08' },
+    { label: 'Crowd Movement', icon: Users, color: 'text-emerald-400', border: 'border-emerald-500/40', source: 'Optical Cam C-03' },
   ];
-  const hasLiveSignals = events.length > 0;
-  const liveStep = hasLiveSignals ? Math.min(3, Math.max(0, events.length - 1)) : step;
 
   return (
     <div className="relative w-full max-w-5xl mx-auto p-6 lg:p-8 rounded-2xl bg-gradient-to-b from-sentinel-card via-sentinel-surface/80 to-sentinel-card border border-sentinel-border shadow-2xl overflow-hidden">
@@ -36,11 +32,11 @@ export const SignalConvergenceHero: React.FC = () => {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-sentinel-accent animate-pulse" />
           <span className="font-mono text-xs uppercase tracking-wider text-slate-300 font-bold">
-            {hasLiveSignals ? 'Live Sensor Stream • Alert-to-Situation Convergence' : 'Ready for Scenario Replay • Alert-to-Situation Convergence'}
+            Live Architectural Demonstration • Alert-to-Situation Convergence
           </span>
         </div>
         <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 px-2.5 py-0.5 rounded-full">
-          {hasLiveSignals ? `LIVE • ${state.currentSimulatedClock}` : `STAGE ${liveStep + 1} OF 4`}
+          STAGE {step + 1} OF 4
         </span>
       </div>
 
@@ -56,22 +52,21 @@ export const SignalConvergenceHero: React.FC = () => {
 
           {signals.map((sig, i) => {
             const Icon = sig.icon;
-            const event = events.find(item => item.eventType === sig.eventType);
-            const isFired = hasLiveSignals ? Boolean(event) : liveStep >= 1 || i <= liveStep + 1;
+            const isFired = step >= 1 || i <= step + 1;
 
             return (
               <div
                 key={sig.label}
                 className={`flex items-center justify-between p-2.5 rounded-lg border text-xs font-mono transition-all duration-500 ${isFired
-                  ? `bg-sentinel-bg ${sig.border} shadow-md translate-x-2`
-                  : 'bg-sentinel-bg/40 border-sentinel-border/30 opacity-50'
+                    ? `bg-sentinel-bg ${sig.border} shadow-md translate-x-2`
+                    : 'bg-sentinel-bg/40 border-sentinel-border/30 opacity-50'
                   }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className={`w-4 h-4 ${sig.color}`} />
                   <span className="text-slate-200 font-semibold">{sig.label}</span>
                 </div>
-                <span className="text-[10px] text-slate-500">{event ? `${event.source} • ${(event.confidence * 100).toFixed(0)}%` : sig.source}</span>
+                <span className="text-[10px] text-slate-500">{sig.source}</span>
               </div>
             );
           })}
@@ -105,14 +100,14 @@ export const SignalConvergenceHero: React.FC = () => {
       {/* Bottom Step Indicator Bar */}
       <div className="mt-6 pt-4 border-t border-sentinel-border/50 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
         <span className="text-slate-400">
-          {hasLiveSignals ? `${events.length} live signals received • ${state.scenarioName}` : 'Start a scenario to replace this preview with live telemetry.'}
+          The system recommends. The authorized human decides.
         </span>
         <div className="flex items-center gap-2">
           {[0, 1, 2, 3].map((s) => (
             <button
               key={s}
-              onClick={() => !hasLiveSignals && setStep(s)}
-              className={`h-2 rounded-full transition-all ${!hasLiveSignals ? 'cursor-pointer' : 'cursor-default'} ${liveStep === s ? 'w-8 bg-sentinel-accent' : 'w-2 bg-slate-700 hover:bg-slate-500'
+              onClick={() => setStep(s)}
+              className={`h-2 rounded-full transition-all cursor-pointer ${step === s ? 'w-8 bg-sentinel-accent' : 'w-2 bg-slate-700 hover:bg-slate-500'
                 }`}
             />
           ))}

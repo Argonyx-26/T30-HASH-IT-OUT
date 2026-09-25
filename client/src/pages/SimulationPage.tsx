@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSimulation } from '../context/SimulationContext';
 import { CampusMap } from '../components/CampusMap';
+import { EventTimeline } from '../components/EventTimeline';
 import {
   RotateCcw,
   Radio,
@@ -8,14 +9,14 @@ import {
   ShieldAlert,
   Users,
   Sparkles,
-  Cpu,
-  Database
+  Cpu
 } from 'lucide-react';
 
 export const SimulationPage: React.FC = () => {
   const {
     state,
     scenarios,
+    events,
     startScenario,
     resetSimulation
   } = useSimulation();
@@ -43,15 +44,15 @@ export const SimulationPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             <h1 className="text-xl sm:text-2xl font-mono font-bold text-slate-100">
-              DATA COLLECTION LIBRARY
+              DIGITAL TWIN SIMULATION ENGINE
             </h1>
           </div>
           <p className="text-xs font-sans text-slate-400 mt-0.5">
-            Select a recorded packet to load its signal context into the live command board.
+            &ldquo;Select a stored scenario to replay its synthetic sensor stream.&rdquo;
           </p>
         </div>
 
-        <span className="text-[10px] font-mono uppercase text-slate-500">Signal archive</span>
+        <span className="text-[10px] font-mono uppercase text-slate-500">Backend replay mode</span>
       </div>
 
       {/* Replay Control Bar */}
@@ -121,25 +122,26 @@ export const SimulationPage: React.FC = () => {
         {/* Left: Campus Map and Event Stream (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
           <CampusMap />
+          <EventTimeline events={events} maxEvents={8} />
         </div>
 
         {/* Right: Scenario Library (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
             <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">
-              Signal Records ({scenarios.length})
+              Scenario Library ({scenarios.length})
             </h3>
             <span className="text-[10px] font-mono text-slate-400">
-              Live archive
+              Backend replay mode
             </span>
           </div>
 
           <div className="space-y-3">
             {scenarios.length === 0 ? (
               <div className="p-4 rounded-xl border border-dashed border-sentinel-border bg-sentinel-card text-xs text-slate-400">
-                No recorded signal packets are available.
+                No situations are available. Load data from the backend or provide a situation before starting.
               </div>
-            ) : scenarios.map((scen, index) => {
+            ) : scenarios.map((scen) => {
               const Icon = getScenarioIcon(scen.category);
               const isActive = state.scenarioId === scen.id;
 
@@ -155,35 +157,27 @@ export const SimulationPage: React.FC = () => {
                   <div className="flex items-center justify-between pb-2 border-b border-sentinel-border/50">
                     <div className="flex items-center gap-2">
                       <div className={`p-1.5 rounded-lg ${isActive ? 'bg-sentinel-accent text-slate-950' : 'bg-slate-800 text-sentinel-accent'}`}>
-                        <Database className="w-4 h-4" />
+                        <Icon className="w-4 h-4" />
                       </div>
-                      <div>
-                        <span className="block text-[9px] uppercase tracking-[0.18em] text-slate-500">Record</span>
-                        <h4 className="font-mono text-xs font-bold text-slate-100 group-hover:text-sentinel-accent">
-                          {`R-${String(index + 1).padStart(2, '0')}`}
-                        </h4>
-                      </div>
+                      <h4 className="font-mono text-xs font-bold text-slate-100 group-hover:text-sentinel-accent">
+                        {scen.name}
+                      </h4>
                     </div>
                     <span className="text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
                       {scen.duration}s
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center gap-2 text-[10px] font-mono uppercase text-slate-400">
-                    <Icon className="w-3.5 h-3.5 text-sentinel-accent" />
-                    <span>Signal pattern</span>
-                  </div>
-
                   <p className="text-xs text-slate-300 font-sans mt-2 leading-relaxed">
-                    Recorded telemetry packet for contextual review and operator analysis.
+                    {scen.description}
                   </p>
 
                   <div className="mt-3 pt-2 border-t border-sentinel-border/40 font-mono text-[11px] space-y-1">
                     <div className="text-slate-400">
-                      <span className="text-slate-500">Inputs:</span> {scen.signalTypes.join(' • ')}
+                      <span className="text-slate-500">SIGNALS:</span> {scen.signalTypes.join(' • ')}
                     </div>
                     <div className="text-emerald-400">
-                      <span className="text-slate-500">Context:</span> signal archive packet
+                      <span className="text-slate-500">OUTCOME:</span> {scen.expectedOutcome}
                     </div>
                   </div>
                 </div>

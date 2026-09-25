@@ -3,8 +3,18 @@ import { Link } from 'react-router-dom';
 import { useSimulation } from '../context/SimulationContext';
 import { CampusMap } from '../components/CampusMap';
 import { StatusBadge } from '../components/StatusBadge';
+import { ConfidenceMeter } from '../components/ConfidenceMeter';
+import { EvidencePanel } from '../components/EvidencePanel';
+import { ResponseRecommendationPanel } from '../components/ResponseRecommendationPanel';
+import { ExplainabilityDrawer } from '../components/ExplainabilityDrawer';
+import { EventTimeline } from '../components/EventTimeline';
 import {
+  ShieldAlert,
+  HelpCircle,
+  ExternalLink,
   Layers,
+  Radio,
+  Sparkles,
   CheckCircle,
   Clock,
   ArrowUpRight
@@ -20,8 +30,8 @@ export const OperationsDashboard: React.FC = () => {
     state
   } = useSimulation();
 
+  const [explainabilityOpen, setExplainabilityOpen] = useState(false);
   const [selectedZoneFilter, setSelectedZoneFilter] = useState<string | undefined>(undefined);
-  const [selectedEventId, setSelectedEventId] = useState<string | undefined>(undefined);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -93,10 +103,10 @@ export const OperationsDashboard: React.FC = () => {
                     key={inc.id}
                     onClick={() => setSelectedIncidentId(inc.id)}
                     className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-200 group ${isSelected
-                      ? 'bg-sentinel-surface border-sentinel-accent shadow-lg shadow-sentinel-accent/10 translate-x-1'
-                      : isCritical
-                        ? 'bg-red-950/20 border-red-500/40 hover:bg-sentinel-hover'
-                        : 'bg-sentinel-card border-sentinel-border hover:bg-sentinel-hover'
+                        ? 'bg-sentinel-surface border-sentinel-accent shadow-lg shadow-sentinel-accent/10 translate-x-1'
+                        : isCritical
+                          ? 'bg-red-950/20 border-red-500/40 hover:bg-sentinel-hover'
+                          : 'bg-sentinel-card border-sentinel-border hover:bg-sentinel-hover'
                       }`}
                   >
                     <div className="flex items-center justify-between pb-2 border-b border-sentinel-border/50">
@@ -130,17 +140,93 @@ export const OperationsDashboard: React.FC = () => {
         </div>
 
         {/* CENTER: LEVEL 2 — Digital Twin & Spatial Picture (5 Cols) */}
-        <div className="lg:col-span-9 space-y-4">
+        <div className="lg:col-span-5 space-y-4">
           <CampusMap
             selectedZoneName={selectedIncident?.zone || selectedZoneFilter}
             onSelectZone={(zoneName) => setSelectedZoneFilter(zoneName)}
-            selectedEventId={selectedEventId}
-            onSelectEvent={setSelectedEventId}
           />
 
         </div>
 
+        {/* RIGHT: LEVEL 2 & 3 — Selected Incident Intelligence & Recommendations (4 Cols) */}
+        <div className="lg:col-span-4 space-y-4">
+          {selectedIncident ? (
+            <>
+              {/* Incident Intelligence Header Card */}
+              <div className="p-4 rounded-xl bg-sentinel-card border border-sentinel-border space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-red-400" />
+                    <span className="font-mono text-xs font-bold text-slate-100">
+                      {selectedIncident.id}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={selectedIncident.status} size="sm" />
+                    <Link
+                      to={`/incidents/${selectedIncident.id}`}
+                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-sentinel-hover"
+                      title="Open dedicated case file"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-mono text-sm font-bold text-slate-100">
+                    {selectedIncident.title}
+                  </h3>
+                  <p className="font-mono text-xs text-slate-400 mt-0.5">
+                    Zone: {selectedIncident.zone} &bull; {selectedIncident.location}
+                  </p>
+                </div>
+
+                {/* Explainability Trigger Button */}
+                <button
+                  onClick={() => setExplainabilityOpen(true)}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-800/60 text-cyan-300 font-mono text-xs font-semibold tracking-wider uppercase transition-colors cursor-pointer"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  <span>Why this incident? (Explainability)</span>
+                </button>
+              </div>
+
+              {/* Confidence & Severity Breakdown */}
+              <ConfidenceMeter incident={selectedIncident} />
+
+              {/* Evidence Panel */}
+              <EvidencePanel incident={selectedIncident} />
+
+              {/* Response Recommendations & Human Decides Workflow */}
+              <ResponseRecommendationPanel incident={selectedIncident} />
+            </>
+          ) : (
+            <div className="p-8 rounded-xl bg-sentinel-card border border-sentinel-border text-center space-y-3">
+              <Sparkles className="w-8 h-8 text-slate-500 mx-auto" />
+              <h3 className="font-mono text-sm font-bold text-slate-300">
+                Command Center Nominal
+              </h3>
+              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                Create or load an incident to inspect its details and response workflow.
+              </p>
+            </div>
+          )}
+        </div>
+
       </div>
+
+      {/* BOTTOM: Live Signal Timeline */}
+      <div className="pt-4">
+        <EventTimeline events={events} />
+      </div>
+
+      {/* Explainability Drawer */}
+      <ExplainabilityDrawer
+        incident={selectedIncident}
+        isOpen={explainabilityOpen}
+        onClose={() => setExplainabilityOpen(false)}
+      />
 
     </div>
   );

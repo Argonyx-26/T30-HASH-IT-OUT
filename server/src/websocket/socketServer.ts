@@ -49,7 +49,7 @@ export class SocketServer {
       socket.on('simulation.reset', () => {
         const state = this.engine.reset();
         this.io.emit('simulation.state', state);
-        this.io.emit('incidents.list', this.engine.getIncidents());
+        this.io.emit('incidents.list', []);
         this.io.emit('events.list', []);
       });
 
