@@ -73,6 +73,7 @@ export interface IncidentExplanation {
   whyCreated: string;
   whyPrioritized: string;
   whyConfidenceChanged: string;
+  correlationLogic?: string;
   whatIsUncertain: string;
   whatWouldChangeAssessment: string;
   agentContributions: AgentContribution[];

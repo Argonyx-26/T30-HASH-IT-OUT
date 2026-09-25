@@ -98,6 +98,7 @@ export class CorrelationAgent {
         whyCreated: `The first signal came from ${event.source}. It indicates a possible ${this.categoryLabel(category)} in ${event.zone}, so Sentinel opened a provisional incident for monitoring.`,
         whyPrioritized: `The incident remains at ${initialSeverity.toUpperCase()} because only one sensor has reported the situation so far.`,
         whyConfidenceChanged: `Initial baseline confidence at ${(initialConfidence * 100).toFixed(0)}% from single input source.`,
+        correlationLogic: `Sentinel started with one signal and kept it in watch mode. It only raises confidence when another sensor in the same area reports a matching problem within the same time window.`,
         whatIsUncertain: 'Visual verification pending; waiting for corroborating cross-system signals.',
         whatWouldChangeAssessment: 'Corroboration from independent sensor or on-site security check.',
         agentContributions: [
@@ -127,6 +128,7 @@ export class CorrelationAgent {
 
     incident.eventIds.push(event.id);
     incident.events.push(event);
+    this.trimIncidentSignals(incident);
     incident.metrics = this.calculateMetrics(incident.events);
     incident.updatedAt = event.timestamp;
 
@@ -188,6 +190,10 @@ export class CorrelationAgent {
         ? `Severity elevated to CRITICAL after ${uniqueSourceTypes} independent sensor types and ${incident.events.length} signals converged.`
         : `Priority increased after ${uniqueSourceTypes} independent sensor types corroborated the same situation in ${incident.zone}.`;
 
+    incident.explanation.correlationLogic = uniqueSourceTypes < 2
+      ? `Sentinel matched the same problem type and area, but only one sensor family is reporting it. It is still waiting for a second independent source before calling it a confirmed event.`
+      : `Sentinel looked for the same hazard in the same zone within a short time window. It then grouped the strongest signals from different sensor types and raised confidence because they agreed on the same incident.`;
+
     incident.explanation.whyConfidenceChanged = uniqueSourceTypes < 2
       ? `Confidence is ${(newConfidence * 100).toFixed(0)}% after another related signal, but independent sensor confirmation is still pending.`
       : `Confidence increased from ${(incident.confidenceTrajectory[incident.confidenceTrajectory.length - 2]?.confidence * 100 || 61).toFixed(0)}% to ${(newConfidence * 100).toFixed(0)}% because independent evidence converged from ${uniqueSourceTypes} sensor types.`;
@@ -209,6 +215,25 @@ export class CorrelationAgent {
       incidentId: incident.id,
       eventId: event.id
     });
+  }
+
+  private trimIncidentSignals(incident: Incident): void {
+    const maxSignals = 5;
+    if (incident.events.length <= maxSignals) return;
+
+    const selected = [...incident.events]
+      .sort((a, b) => {
+        const confirmedPriority = Number(b.evidenceCategory === 'confirmed') - Number(a.evidenceCategory === 'confirmed');
+        if (confirmedPriority !== 0) return confirmedPriority;
+        return b.confidence - a.confidence;
+      })
+      .slice(0, maxSignals);
+
+    const selectedIds = new Set(selected.map(event => event.id));
+    incident.events = selected;
+    incident.eventIds = selected.map(event => event.id);
+    incident.evidenceSummary.confirmed = incident.evidenceSummary.confirmed.filter(item => selectedIds.has(item.id.replace(/^ev-/, '')));
+    incident.evidenceSummary.supporting = incident.evidenceSummary.supporting.filter(item => selectedIds.has(item.id.replace(/^ev-/, '')));
   }
 
   private calculateMetrics(events: SafetyEvent[]): IncidentMetrics {

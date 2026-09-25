@@ -58,7 +58,7 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
       if (!uniqueSignals.has(signalKey)) uniqueSignals.set(signalKey, event);
     }
 
-    return [...uniqueSignals.values()].slice(0, 4);
+    return [...uniqueSignals.values()].slice(0, 5);
   };
 
   return (
