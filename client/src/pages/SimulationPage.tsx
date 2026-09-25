@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSimulation } from '../context/SimulationContext';
 import { CampusMap } from '../components/CampusMap';
-import { EventTimeline } from '../components/EventTimeline';
 import {
   RotateCcw,
   Radio,
@@ -17,7 +16,6 @@ export const SimulationPage: React.FC = () => {
   const {
     state,
     scenarios,
-    events,
     startScenario,
     resetSimulation
   } = useSimulation();
@@ -123,7 +121,6 @@ export const SimulationPage: React.FC = () => {
         {/* Left: Campus Map and Event Stream (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
           <CampusMap />
-          <EventTimeline events={events} maxEvents={8} />
         </div>
 
         {/* Right: Scenario Library (5 Cols) */}

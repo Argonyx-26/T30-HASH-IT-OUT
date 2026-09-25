@@ -288,90 +288,75 @@ export const CampusMap: React.FC<CampusMapProps> = ({ onSelectZone, onSelectEven
       </div>
 
       {/* Building Inspection Modal / Popover */}
-      {inspectedZone && (
-        <div className="mt-3 p-3.5 rounded-lg bg-sentinel-surface border border-sentinel-border transition-all animate-fadeIn">
-          <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-sentinel-accent" />
-              <h4 className="text-xs font-bold font-mono text-slate-100 uppercase">
-                Zone Telemetry: {inspectedZone.name}
-              </h4>
-            </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge status={inspectedZone.status} size="sm" />
-              <button
-                onClick={() => setInspectedZone(null)}
-                className="text-slate-400 hover:text-slate-100 p-0.5 rounded hover:bg-sentinel-hover"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+      {inspectedZone && (() => {
+        const zoneIncidents = incidents.filter(incident =>
+          incident.zone.toLowerCase() === inspectedZone.name.toLowerCase() ||
+          incident.zone.toLowerCase().includes(inspectedZone.name.toLowerCase()) ||
+          inspectedZone.name.toLowerCase().includes(incident.zone.toLowerCase())
+        );
+        const zoneSignals = getZoneEvents(inspectedZone.name);
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-xs">
-            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
-              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
-                <Radio className="w-3 h-3 text-cyan-400" />
-                <span>Active Sources</span>
+        return (
+          <div className="mt-3 p-3.5 rounded-lg bg-sentinel-surface border border-sentinel-border transition-all animate-fadeIn">
+            <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-sentinel-accent" />
+                <h4 className="text-xs font-bold font-mono text-slate-100 uppercase">
+                  Zone Telemetry: {inspectedZone.name}
+                </h4>
               </div>
-              <p className="font-mono font-bold text-slate-100 mt-1">{inspectedZone.activeSources} Sensor Nodes</p>
-            </div>
-
-            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
-              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
-                <Users className="w-3 h-3 text-emerald-400" />
-                <span>Occupancy State</span>
+              <div className="flex items-center gap-2">
+                <StatusBadge status={inspectedZone.status} size="sm" />
+                <button
+                  onClick={() => setInspectedZone(null)}
+                  className="text-slate-400 hover:text-slate-100 p-0.5 rounded hover:bg-sentinel-hover"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <p className="font-mono font-bold text-slate-100 mt-1 uppercase">{inspectedZone.occupancyState}</p>
             </div>
 
-            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
-              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
-                <AlertTriangle className="w-3 h-3 text-amber-400" />
-                <span>Correlated Incidents</span>
-              </div>
-              <p className="font-mono font-bold text-slate-100 mt-1">
-                {incidents.filter(i => i.zone === inspectedZone.name && i.status !== 'resolved' && i.status !== 'false_alarm').length} Active
+            <div className="mt-3 rounded-lg border border-sentinel-border bg-sentinel-bg/60 p-3">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Correlation summary</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
+                {zoneIncidents.length > 0
+                  ? zoneIncidents[0].summary
+                  : zoneSignals.length > 0
+                    ? `Cross-modal signal convergence is building in ${inspectedZone.name}: ${zoneSignals
+                        .slice(0, 3)
+                        .map(signal => signal.eventType.replaceAll('_', ' '))
+                        .join(', ')} are aligning within the same spatial footprint.`
+                    : `No active incident correlation is yet forming in ${inspectedZone.name}. Sentinel is monitoring for a new cross-modal pattern.`}
               </p>
             </div>
 
-            <div className="p-2 rounded bg-sentinel-bg/80 border border-sentinel-border/50">
-              <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
-                <Clock className="w-3 h-3 text-purple-400" />
-                <span>Last Telemetry Sync</span>
+            <div className="mt-3 border-t border-sentinel-border/60 pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Recent signals</p>
+                <span className="text-[10px] text-slate-500">{zoneSignals.length} tracked</span>
               </div>
-              <p className="font-mono font-bold text-slate-100 mt-1">{state.currentSimulatedClock}</p>
-            </div>
-          </div>
 
-          {/* Recent signals in zone */}
-          <div className="mt-3">
-            <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider">
-              Recent Signals Converging on Zone:
-            </span>
-            <div className="mt-1.5 space-y-1">
-              {getZoneEvents(inspectedZone.name).length > 0 ? (
-                getZoneEvents(inspectedZone.name).map((e) => (
-                  <button
-                    type="button"
-                    key={e.id}
-                    onClick={() => handleEventClick(e)}
-                    className={`w-full flex items-center justify-between text-left text-[11px] font-mono p-1.5 rounded bg-sentinel-bg border transition-colors ${selectedEventId === e.id ? 'border-amber-400/70 bg-amber-500/10' : 'border-sentinel-border/30 hover:border-sentinel-accent/60'}`}
-                  >
-                    <span className="text-slate-300 font-semibold">{e.source}: {e.evidence}</span>
-                    <span className="text-cyan-400 text-[10px]">{e.timestamp}</span>
-                  </button>
-                ))
-              ) : (
-                <div className="text-[11px] font-mono text-slate-500 py-1 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  All sensor baselines nominal. Zero anomaly excursions.
+              {zoneSignals.length > 0 ? (
+                <div className="space-y-1.5">
+                  {zoneSignals.map(signal => (
+                    <button
+                      key={signal.id}
+                      type="button"
+                      onClick={() => handleEventClick(signal)}
+                      className="flex w-full items-center justify-between rounded bg-sentinel-bg/50 px-2 py-1.5 text-left text-[11px] text-slate-300 hover:bg-sentinel-hover"
+                    >
+                      <span className="font-medium text-slate-200">{signal.eventType.replaceAll('_', ' ')}</span>
+                      <span className="text-cyan-300">{signal.severity}</span>
+                    </button>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-[11px] text-slate-500">No recent signals in this zone.</p>
               )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {selectedEvent && (
         <div className="mt-3 rounded-lg border border-amber-400/50 bg-amber-500/10 p-3.5 animate-fadeIn" role="alert">

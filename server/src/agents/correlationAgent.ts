@@ -12,7 +12,7 @@ export class CorrelationAgent {
       const correlationWindowSeconds = 120;
 
       // A situation is one category in one zone within a bounded time window.
-      // Different categories in the same building remain separate incidents.
+      // Later signals from different source types are added to the same incident.
       let match = incidents.find(inc =>
         inc.events[0]?.metadata?.simulationRunId === event.metadata?.simulationRunId &&
         inc.zone === event.zone &&
@@ -89,14 +89,14 @@ export class CorrelationAgent {
       createdAt: event.timestamp,
       createdRelativeTime: event.relativeTime,
       updatedAt: event.timestamp,
-      summary: `Initial signal detected in ${event.zone} (${event.location}). Sentinel is actively monitoring for cross-modal confirmation.`,
+      summary: `A single sensor reported a possible ${this.categoryLabel(category)} in ${event.zone} (${event.location}). No final conclusion is made until independent sensors corroborate it.`,
       eventIds: [event.id],
       events: [event],
       metrics: this.calculateMetrics([event]),
       evidenceSummary: { confirmed, supporting, unknown },
       explanation: {
-        whyCreated: `Signal detected by ${event.source} indicating potential anomaly in ${event.zone}.`,
-        whyPrioritized: `Severity classified as ${initialSeverity.toUpperCase()} based on single source telemetry.`,
+        whyCreated: `The first signal came from ${event.source}. It indicates a possible ${this.categoryLabel(category)} in ${event.zone}, so Sentinel opened a provisional incident for monitoring.`,
+        whyPrioritized: `The incident remains at ${initialSeverity.toUpperCase()} because only one sensor has reported the situation so far.`,
         whyConfidenceChanged: `Initial baseline confidence at ${(initialConfidence * 100).toFixed(0)}% from single input source.`,
         whatIsUncertain: 'Visual verification pending; waiting for corroborating cross-system signals.',
         whatWouldChangeAssessment: 'Corroboration from independent sensor or on-site security check.',
@@ -177,13 +177,20 @@ export class CorrelationAgent {
     });
 
     // Update summary & explanations
-    incident.summary = `Multiple independent signals (${incident.events.length} sources across ${uniqueSourceTypes} modalities) are converging around ${incident.location}.`;
+    const eventNames = [...new Set(incident.events.map(item => this.eventLabel(item.eventType)))];
+    incident.summary = uniqueSourceTypes < 2
+      ? `The same sensor family has reported ${eventNames.join(', ')} around ${incident.location}. Sentinel is still waiting for an independent sensor type before making a stronger prediction.`
+      : `Independent sensor types (${uniqueSourceTypes}) detected ${eventNames.join(', ')} around ${incident.location}. Together, these signals support a possible ${this.categoryLabel(incident.category)} rather than relying on one sensor alone.`;
 
-    incident.explanation.whyPrioritized = incident.severity === 'critical'
-      ? `Severity elevated to CRITICAL due to confirmation from ${event.source} and ${incident.events.length} converging modalities.`
-      : `Elevated priority due to multi-source corroboration in ${incident.zone}.`;
+    incident.explanation.whyPrioritized = uniqueSourceTypes < 2
+      ? `The incident remains at ${incident.severity.toUpperCase()} because independent sensor confirmation is still pending.`
+      : incident.severity === 'critical'
+        ? `Severity elevated to CRITICAL after ${uniqueSourceTypes} independent sensor types and ${incident.events.length} signals converged.`
+        : `Priority increased after ${uniqueSourceTypes} independent sensor types corroborated the same situation in ${incident.zone}.`;
 
-    incident.explanation.whyConfidenceChanged = `Confidence increased from ${(incident.confidenceTrajectory[incident.confidenceTrajectory.length - 2]?.confidence * 100 || 61).toFixed(0)}% to ${(newConfidence * 100).toFixed(0)}% because independent evidence converged from ${event.sourceType.replace('_', ' ')}.`;
+    incident.explanation.whyConfidenceChanged = uniqueSourceTypes < 2
+      ? `Confidence is ${(newConfidence * 100).toFixed(0)}% after another related signal, but independent sensor confirmation is still pending.`
+      : `Confidence increased from ${(incident.confidenceTrajectory[incident.confidenceTrajectory.length - 2]?.confidence * 100 || 61).toFixed(0)}% to ${(newConfidence * 100).toFixed(0)}% because independent evidence converged from ${uniqueSourceTypes} sensor types.`;
 
     incident.explanation.agentContributions.push({
       agentName: this.getAgentForSource(event.sourceType),
@@ -223,6 +230,20 @@ export class CorrelationAgent {
       crowdRiskPercentage: percentageFor(['crowd_anomaly']),
       equipmentRiskPercentage: percentageFor(['equipment_overheat'])
     };
+  }
+
+  private categoryLabel(category: Incident['category']): string {
+    switch (category) {
+      case 'fire_hazard': return 'fire hazard';
+      case 'security_breach': return 'security breach';
+      case 'crowd_safety': return 'crowd safety issue';
+      case 'equipment_failure': return 'equipment failure';
+      case 'false_alarm': return 'uncorroborated anomaly';
+    }
+  }
+
+  private eventLabel(eventType: SafetyEvent['eventType']): string {
+    return eventType.replaceAll('_', ' ');
   }
 
   private mapEventToCategory(eventType: SafetyEvent['eventType']): Incident['category'] {
