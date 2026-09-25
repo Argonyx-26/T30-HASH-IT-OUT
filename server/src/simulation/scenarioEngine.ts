@@ -2,14 +2,17 @@ import { SCENARIOS } from './scenarios';
 import { SafetyEvent, SafetyEventSubmission, SimulationScenario, SimulationState, Incident, AuditEntry } from '../types';
 import { CorrelationAgent } from '../agents/correlationAgent';
 import { SimulationPersistence } from '../data/simulationPersistence';
+import { RecommendationService } from '../ai/recommendationService';
 
 export class ScenarioEngine {
   private currentScenario: SimulationScenario;
   private state: SimulationState;
   private correlationAgent: CorrelationAgent;
+  private readonly recommendationService = new RecommendationService();
   private emittedEventIndices: Set<number> = new Set();
   private timer: NodeJS.Timeout | null = null;
   private baseClockOffsetSeconds: number = 0; // Starts simulation at 00:00 or current simulated hour
+  private simulationRunId = `run-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
   // In-memory simulation database
   public activeEvents: SafetyEvent[] = [];
@@ -74,6 +77,21 @@ export class ScenarioEngine {
     return this.auditLog;
   }
 
+  public async generateAIRecommendations(incidentId: string): Promise<Incident | undefined> {
+    const incident = this.getIncidentById(incidentId);
+    if (!incident) return undefined;
+
+    incident.recommendations = await this.recommendationService.generate(incident);
+    incident.explanation.agentContributions.push({
+      agentName: 'Response AI',
+      role: 'Evidence-Based Planning',
+      inference: `Generated ${incident.recommendations.length} human-authorized response recommendations from the incident evidence.`
+    });
+    await this.persistIncident(incident);
+    this.onIncidentUpdated?.(incident);
+    return incident;
+  }
+
   public async clearAuditLog(): Promise<void> {
     await (this.persistence?.clearAuditLog() || Promise.resolve());
     this.auditLog = [];
@@ -103,6 +121,7 @@ export class ScenarioEngine {
   public startScenario(scenarioId: string, isJudgeDemo: boolean = false, autoPlay: boolean = true): SimulationState {
     this.stopTimer();
     this.emittedEventIndices.clear();
+    this.simulationRunId = `run-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     const scenario = SCENARIOS.find(s => s.id === scenarioId);
     if (!scenario) {
       return this.getState();
@@ -161,7 +180,6 @@ export class ScenarioEngine {
     this.stopTimer();
     this.emittedEventIndices.clear();
     this.activeEvents = [];
-    this.incidents = [];
     this.state = {
       scenarioId: '',
       scenarioName: 'No situation loaded',
@@ -186,7 +204,8 @@ export class ScenarioEngine {
       id: `EVT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       relativeTime: Math.floor(this.state.elapsedSeconds),
       timestamp: this.state.currentSimulatedClock,
-      simulatedClock: this.state.currentSimulatedClock
+      simulatedClock: this.state.currentSimulatedClock,
+      metadata: { ...submission.metadata, simulationRunId: this.simulationRunId }
     };
 
     this.processEvent(safetyEvent);
@@ -322,30 +341,32 @@ export class ScenarioEngine {
   }
 
   private checkAndEmitEvents(): void {
-    this.currentScenario.events.forEach((eventDef, index) => {
-      if (!this.emittedEventIndices.has(index) && this.state.elapsedSeconds >= eventDef.relativeTime) {
-        this.emittedEventIndices.add(index);
+    const nextEventIndex = this.currentScenario.events.findIndex((_, index) => !this.emittedEventIndices.has(index));
+    if (nextEventIndex === -1) return;
 
-        // Build dynamic event with runtime generated timestamp
-        const safetyEvent: SafetyEvent = {
-          id: `EVT-${1000 + Math.floor(Math.random() * 9000)}`,
-          source: eventDef.source,
-          sourceType: eventDef.sourceType,
-          zone: eventDef.zone,
-          location: eventDef.location,
-          relativeTime: Math.floor(this.state.elapsedSeconds),
-          timestamp: this.state.currentSimulatedClock,
-          simulatedClock: this.state.currentSimulatedClock,
-          eventType: eventDef.eventType,
-          severity: eventDef.severity,
-          confidence: eventDef.confidence,
-          evidence: eventDef.evidence,
-          evidenceCategory: eventDef.evidenceCategory
-        };
+    const nextEventDef = this.currentScenario.events[nextEventIndex];
+    if (this.state.elapsedSeconds < nextEventDef.relativeTime) return;
 
-        this.processEvent(safetyEvent);
-      }
-    });
+    this.emittedEventIndices.add(nextEventIndex);
+
+    const safetyEvent: SafetyEvent = {
+      id: `EVT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+      source: nextEventDef.source,
+      sourceType: nextEventDef.sourceType,
+      zone: nextEventDef.zone,
+      location: nextEventDef.location,
+      relativeTime: Math.floor(this.state.elapsedSeconds),
+      timestamp: this.state.currentSimulatedClock,
+      simulatedClock: this.state.currentSimulatedClock,
+      eventType: nextEventDef.eventType,
+      severity: nextEventDef.severity,
+      confidence: nextEventDef.confidence,
+      evidence: nextEventDef.evidence,
+      evidenceCategory: nextEventDef.evidenceCategory,
+      metadata: { simulationRunId: this.simulationRunId }
+    };
+
+    this.processEvent(safetyEvent);
   }
 
   private processEvent(safetyEvent: SafetyEvent): void {

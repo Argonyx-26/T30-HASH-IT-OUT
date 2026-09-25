@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSimulation } from '../context/SimulationContext';
-import { StatusBadge } from '../components/StatusBadge';
-import { ConfidenceMeter } from '../components/ConfidenceMeter';
 import { EvidencePanel } from '../components/EvidencePanel';
 import { SituationGraph } from '../components/SituationGraph';
-import { EventTimeline } from '../components/EventTimeline';
 import { ResponseRecommendationPanel } from '../components/ResponseRecommendationPanel';
 import { ExplainabilityDrawer } from '../components/ExplainabilityDrawer';
 import { 
@@ -15,7 +12,6 @@ import {
   FileText, 
   Activity, 
   Share2, 
-  Clock, 
   ShieldAlert, 
   CheckCircle2, 
   Eye, 
@@ -25,7 +21,7 @@ import {
 export const IncidentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { incidents, auditLog } = useSimulation();
-  const [activeTab, setActiveTab] = useState<'overview' | 'evidence' | 'timeline' | 'graph' | 'response' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'evidence' | 'graph' | 'response' | 'audit'>('overview');
   const [explainabilityOpen, setExplainabilityOpen] = useState(false);
 
   const incident = incidents.find(i => i.id === id) || (incidents.length > 0 ? incidents[0] : null);
@@ -84,8 +80,6 @@ export const IncidentDetailPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <StatusBadge status={incident.severity} size="md" />
-            <StatusBadge status={incident.status} size="md" />
             <button
               onClick={() => setExplainabilityOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-800/60 text-cyan-300 font-mono text-xs font-semibold uppercase transition-colors cursor-pointer"
@@ -95,26 +89,6 @@ export const IncidentDetailPage: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Case Meta Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-xs font-mono text-slate-400">
-          <div>
-            <span>INITIAL CREATION:</span>
-            <p className="text-slate-200 font-bold mt-0.5">{incident.createdAt}</p>
-          </div>
-          <div>
-            <span>EVIDENCE CONFIDENCE:</span>
-            <p className="text-sentinel-accent font-bold mt-0.5">{(incident.confidence * 100).toFixed(0)}% Cross-Validated</p>
-          </div>
-          <div>
-            <span>MODALITIES CONVERGED:</span>
-            <p className="text-slate-200 font-bold mt-0.5">{incident.events.length} Channels</p>
-          </div>
-          <div>
-            <span>LAST TELEMETRY UPDATE:</span>
-            <p className="text-slate-200 font-bold mt-0.5">{incident.updatedAt}</p>
-          </div>
-        </div>
       </div>
 
       {/* Navigation Tabs */}
@@ -122,7 +96,6 @@ export const IncidentDetailPage: React.FC = () => {
         {[
           { key: 'overview', label: 'Overview', icon: Activity },
           { key: 'evidence', label: `Evidence (${incident.events.length})`, icon: Eye },
-          { key: 'timeline', label: 'Timeline', icon: Clock },
           { key: 'graph', label: 'Situation Graph', icon: Layers },
           { key: 'response', label: 'Response Checklist', icon: CheckCircle2 },
           { key: 'audit', label: `Audit Trail (${caseAudit.length})`, icon: FileText },
@@ -168,11 +141,6 @@ export const IncidentDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Confidence Progression */}
-              <ConfidenceMeter incident={incident} />
-
-              {/* Response Preview */}
-              <ResponseRecommendationPanel incident={incident} />
             </div>
 
             <div className="lg:col-span-4 space-y-6">
@@ -183,49 +151,24 @@ export const IncidentDetailPage: React.FC = () => {
 
         {/* TAB 2: EVIDENCE */}
         {activeTab === 'evidence' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-6">
-              <EvidencePanel incident={incident} />
-            </div>
-            <div className="lg:col-span-6 space-y-4">
-              <div className="p-5 rounded-xl bg-sentinel-card border border-sentinel-border">
-                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200 mb-3">
-                  Cross-Modal Independence Verification
-                </h3>
-                <p className="text-xs text-slate-300 font-sans leading-relaxed mb-4">
-                  Sentinel calculates confidence based on source independence. When thermal transducer telemetry agrees with manual physical pull stations and human dispatch calls, probabilistic certainty increases non-linearly.
-                </p>
-                <div className="space-y-2 text-xs font-mono">
-                  {incident.events.map((e) => (
-                    <div key={e.id} className="p-2.5 rounded bg-sentinel-surface border border-sentinel-border flex items-center justify-between">
-                      <span className="text-slate-300 font-bold">{e.source}</span>
-                      <span className="text-sentinel-accent">+{Math.round(e.confidence * 20)}% Contribution</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div className="max-w-3xl">
+            <EvidencePanel incident={incident} />
           </div>
         )}
 
-        {/* TAB 3: TIMELINE */}
-        {activeTab === 'timeline' && (
-          <EventTimeline events={incident.events} />
-        )}
-
-        {/* TAB 4: SITUATION GRAPH */}
+        {/* TAB 3: SITUATION GRAPH */}
         {activeTab === 'graph' && (
           <SituationGraph incident={incident} />
         )}
 
-        {/* TAB 5: RESPONSE */}
+        {/* TAB 4: RESPONSE */}
         {activeTab === 'response' && (
           <div className="max-w-3xl mx-auto">
             <ResponseRecommendationPanel incident={incident} />
           </div>
         )}
 
-        {/* TAB 6: AUDIT */}
+        {/* TAB 5: AUDIT */}
         {activeTab === 'audit' && (
           <div className="p-5 rounded-xl bg-sentinel-card border border-sentinel-border space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-sentinel-border">

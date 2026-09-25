@@ -39,6 +39,7 @@ interface SimulationContextType {
   addOperatorNote: (incidentId: string, note: string) => void;
   toggleRecommendationStep: (incidentId: string, stepId: string) => void;
   deleteIncident: (incidentId: string) => Promise<void>;
+  generateAIRecommendations: (incidentId: string) => Promise<void>;
   clearAuditLog: () => Promise<void>;
   deleteAuditEntry: (auditId: string) => Promise<void>;
   refreshMetrics: () => void;
@@ -243,7 +244,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const startScenario = (scenarioId: string) => {
-    if (socket) {
+    if (socket?.connected) {
       socket.emit('simulation.start', { scenarioId });
     } else {
       fetch(`${BACKEND_URL}/api/simulation/start`, {
@@ -255,7 +256,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const addEvent = (event: SafetyEventSubmission) => {
-    if (socket) {
+    if (socket?.connected) {
       socket.emit('simulation.event.add', event);
       return;
     }
@@ -273,22 +274,22 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const pauseSimulation = () => {
-    if (socket) socket.emit('simulation.pause');
+    if (socket?.connected) socket.emit('simulation.pause');
     else fetch(`${BACKEND_URL}/api/simulation/pause`, { method: 'POST' });
   };
 
   const resumeSimulation = () => {
-    if (socket) socket.emit('simulation.resume');
+    if (socket?.connected) socket.emit('simulation.resume');
     else fetch(`${BACKEND_URL}/api/simulation/resume`, { method: 'POST' });
   };
 
   const resetSimulation = () => {
-    if (socket) socket.emit('simulation.reset');
+    if (socket?.connected) socket.emit('simulation.reset');
     else fetch(`${BACKEND_URL}/api/simulation/reset`, { method: 'POST' });
   };
 
   const setSpeed = (speed: number) => {
-    if (socket) socket.emit('simulation.speed', speed);
+    if (socket?.connected) socket.emit('simulation.speed', speed);
     else fetch(`${BACKEND_URL}/api/simulation/speed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -297,7 +298,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const acknowledgeIncident = (incidentId: string) => {
-    if (socket) socket.emit('operator.acknowledge', { incidentId, operatorName: 'Officer M. Vance' });
+    if (socket?.connected) socket.emit('operator.acknowledge', { incidentId, operatorName: 'Officer M. Vance' });
     else fetch(`${BACKEND_URL}/api/incidents/${incidentId}/acknowledge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -306,7 +307,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const resolveIncident = (incidentId: string, note?: string) => {
-    if (socket) socket.emit('operator.resolve', { incidentId, operatorName: 'Officer M. Vance', note });
+    if (socket?.connected) socket.emit('operator.resolve', { incidentId, operatorName: 'Officer M. Vance', note });
     else fetch(`${BACKEND_URL}/api/incidents/${incidentId}/resolve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -315,7 +316,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const addOperatorNote = (incidentId: string, note: string) => {
-    if (socket) socket.emit('operator.note', { incidentId, note, operatorName: 'Officer M. Vance' });
+    if (socket?.connected) socket.emit('operator.note', { incidentId, note, operatorName: 'Officer M. Vance' });
     else fetch(`${BACKEND_URL}/api/incidents/${incidentId}/notes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -324,12 +325,12 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const toggleRecommendationStep = (incidentId: string, stepId: string) => {
-    if (socket) socket.emit('operator.toggleStep', { incidentId, stepId });
+    if (socket?.connected) socket.emit('operator.toggleStep', { incidentId, stepId });
     else fetch(`${BACKEND_URL}/api/incidents/${incidentId}/steps/${stepId}/toggle`, { method: 'POST' });
   };
 
   const deleteIncident = async (incidentId: string) => {
-    if (socket) {
+    if (socket?.connected) {
       socket.emit('operator.deleteIncident', { incidentId });
       return;
     }
@@ -339,8 +340,18 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setEvents(previous => previous.filter(event => !incidents.find(incident => incident.id === incidentId)?.eventIds.includes(event.id)));
   };
 
+  const generateAIRecommendations = async (incidentId: string) => {
+    const response = await fetch(`${BACKEND_URL}/api/incidents/${encodeURIComponent(incidentId)}/recommendations/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const updatedIncident = await response.json() as Incident;
+    setIncidents(previous => previous.map(incident => incident.id === updatedIncident.id ? updatedIncident : incident));
+  };
+
   const clearAuditLog = async () => {
-    if (socket) {
+    if (socket?.connected) {
       socket.emit('operator.clearAudit');
       return;
     }
@@ -350,7 +361,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const deleteAuditEntry = async (auditId: string) => {
-    if (socket) {
+    if (socket?.connected) {
       socket.emit('operator.deleteAudit', { auditId });
       return;
     }
@@ -392,6 +403,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       addOperatorNote,
       toggleRecommendationStep,
       deleteIncident,
+      generateAIRecommendations,
       clearAuditLog,
       deleteAuditEntry,
       refreshMetrics

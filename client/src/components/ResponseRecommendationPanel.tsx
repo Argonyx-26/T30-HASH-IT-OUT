@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Incident } from '../types';
 import { useSimulation } from '../context/SimulationContext';
-import { 
-  CheckSquare, 
-  Square, 
-  ShieldCheck, 
-  AlertCircle, 
-  CheckCircle2, 
-  Send, 
-  UserCheck, 
-  Lock 
+import {
+  CheckSquare,
+  Square,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+  Send,
+  UserCheck,
+  Lock
+  , BrainCircuit
 } from 'lucide-react';
 
 interface ResponseRecommendationPanelProps {
@@ -18,10 +19,12 @@ interface ResponseRecommendationPanelProps {
 }
 
 export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelProps> = ({ incident, className = '' }) => {
-  const { acknowledgeIncident, resolveIncident, toggleRecommendationStep, addOperatorNote } = useSimulation();
+  const { acknowledgeIncident, resolveIncident, toggleRecommendationStep, addOperatorNote, generateAIRecommendations } = useSimulation();
   const [operatorNoteText, setOperatorNoteText] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolutionReason, setResolutionReason] = useState('All monitored zones returned to nominal baseline. Hazard mitigated.');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   if (!incident) {
     return (
@@ -46,9 +49,21 @@ export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelPr
     setIsResolving(false);
   };
 
+  const handleGenerateAI = async () => {
+    setIsGeneratingAI(true);
+    setAiError(null);
+    try {
+      await generateAIRecommendations(incident.id);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'AI recommendation generation failed.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   return (
     <div className={`p-4 rounded-xl bg-sentinel-card border border-sentinel-border space-y-4 ${className}`}>
-      
+
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-sentinel-border">
         <div>
@@ -59,9 +74,15 @@ export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelPr
             SOP Playbook: {incident.category.toUpperCase().replace('_', ' ')}
           </p>
         </div>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          POLICY V3.4
-        </span>
+        <button
+          type="button"
+          onClick={handleGenerateAI}
+          disabled={isGeneratingAI}
+          className="inline-flex items-center gap-1.5 rounded border border-sentinel-accent/40 bg-sentinel-accent/10 px-2 py-1 text-[10px] font-mono font-bold text-sentinel-accent hover:bg-sentinel-accent/20 disabled:cursor-wait disabled:opacity-60"
+        >
+          <BrainCircuit className="h-3.5 w-3.5" />
+          {isGeneratingAI ? 'GENERATING...' : 'GENERATE AI PLAN'}
+        </button>
       </div>
 
       {/* Human In The Loop Mandate Banner */}
@@ -86,11 +107,10 @@ export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelPr
           <div
             key={rec.id}
             onClick={() => !isResolved && toggleRecommendationStep(incident.id, rec.id)}
-            className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
-              rec.completed
+            className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${rec.completed
                 ? 'bg-emerald-950/20 border-emerald-800/40 text-slate-300'
                 : 'bg-sentinel-surface border-sentinel-border hover:bg-sentinel-hover text-slate-200'
-            }`}
+              }`}
           >
             <button className="mt-0.5 text-sentinel-accent">
               {rec.completed ? (
@@ -104,9 +124,8 @@ export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelPr
                 <span className={`font-medium ${rec.completed ? 'line-through text-slate-400' : ''}`}>
                   {rec.step}. {rec.action}
                 </span>
-                <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded uppercase ${
-                  rec.priority === 'immediate' ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-400'
-                }`}>
+                <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded uppercase ${rec.priority === 'immediate' ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-400'
+                  }`}>
                   {rec.priority}
                 </span>
               </div>
@@ -116,6 +135,7 @@ export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelPr
             </div>
           </div>
         ))}
+        {aiError && <p className="rounded-lg border border-red-500/30 bg-red-950/20 p-2 text-[11px] text-red-300">{aiError}</p>}
       </div>
 
       {/* Action Buttons */}
@@ -198,7 +218,7 @@ export const ResponseRecommendationPanel: React.FC<ResponseRecommendationPanelPr
         <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider">
           Authorized Operator Case Notes:
         </span>
-        
+
         {/* Existing Notes Stream */}
         <div className="space-y-1.5 max-h-32 overflow-y-auto">
           {incident.operatorNotes.length > 0 ? (

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const IncidentsPage: React.FC = () => {
-  const { incidents, deleteIncident } = useSimulation();
+  const { incidents, selectedIncidentId, setSelectedIncidentId, deleteIncident } = useSimulation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -23,13 +23,28 @@ export const IncidentsPage: React.FC = () => {
     await deleteIncident(incidentId);
   };
 
-  const filteredIncidents = incidents.filter(inc => {
-    const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inc.zone.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || inc.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredIncidents = [...incidents]
+    .filter(inc => {
+      const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inc.zone.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || inc.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const aTime = Number(new Date(a.createdAt || 0));
+      const bTime = Number(new Date(b.createdAt || 0));
+      return bTime - aTime;
+    });
+
+  const unresolvedIncidents = filteredIncidents.filter(incident => incident.status !== 'resolved');
+  const activeIncidentId = unresolvedIncidents.some(incident => incident.id === selectedIncidentId)
+    ? selectedIncidentId
+    : unresolvedIncidents[0]?.id || null;
+  const orderedIncidents = activeIncidentId
+    ? filteredIncidents.filter(incident => incident.id === activeIncidentId)
+      .concat(filteredIncidents.filter(incident => incident.id !== activeIncidentId))
+    : filteredIncidents;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -93,38 +108,68 @@ export const IncidentsPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredIncidents.map((inc) => (
-            <div key={inc.id} className="p-5 rounded-2xl bg-sentinel-card border border-sentinel-border hover:border-sentinel-accent/60 transition-all duration-200 flex flex-col justify-between group shadow-lg">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-sentinel-border/50">
-                  <span className="font-mono text-xs font-bold text-sentinel-accent group-hover:underline">{inc.id}</span>
-                  <StatusBadge status={inc.status} size="sm" />
+          {orderedIncidents.map((inc) => {
+            const isCurrent = inc.id === activeIncidentId;
+
+            return (
+              <div
+                key={inc.id}
+                onClick={() => setSelectedIncidentId(inc.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedIncidentId(inc.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                className={`relative p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between group shadow-lg ${isCurrent
+                  ? 'bg-[radial-gradient(circle_at_center,_rgba(239,68,68,0.18),_rgba(69,10,10,0.14)_36%,_rgba(15,23,42,0.9)_100%)] border-red-400/80 shadow-[0_0_0_1px_rgba(248,113,113,0.6),0_0_24px_rgba(248,113,113,0.35),0_0_44px_rgba(248,113,113,0.22)] scale-[1.01] animate-[pulse_1.1s_ease-in-out_infinite]'
+                  : 'bg-sentinel-card border-sentinel-border hover:border-sentinel-accent/60 opacity-85'
+                  }`}
+              >
+                {isCurrent && (
+                  <div className="absolute inset-0 rounded-2xl border border-red-500/60 pointer-events-none shadow-[inset_0_0_18px_rgba(248,113,113,0.2)]" />
+                )}
+
+                {isCurrent && (
+                  <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2.5 rounded-full border-2 border-red-200 bg-red-900 px-5 py-2.5 text-[11px] font-mono font-bold uppercase tracking-[0.24em] text-white shadow-[0_0_10px_rgba(248,113,113,0.95),0_0_28px_rgba(248,113,113,0.75)] animate-pulse">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-300 shadow-[0_0_10px_rgba(254,202,202,1)]" />
+                    Current Event
+                  </div>
+                )}
+
+                <div className="space-y-3 relative">
+                  <div className="flex items-center justify-between pb-2 border-b border-sentinel-border/50">
+                    <span className="font-mono text-xs font-bold text-sentinel-accent group-hover:underline">{inc.id}</span>
+                    <StatusBadge status={inc.status} size="sm" />
+                  </div>
+                  <div>
+                    <h3 className="font-mono text-sm font-bold text-slate-100 group-hover:text-sentinel-accent transition-colors line-clamp-1">{inc.title}</h3>
+                    <p className="text-xs font-mono text-slate-400 mt-1">Zone: {inc.zone} &bull; {inc.location}</p>
+                  </div>
+                  <p className="text-xs text-slate-300 font-sans line-clamp-2 leading-relaxed">{inc.summary}</p>
+                  <div className="p-2.5 rounded-lg bg-sentinel-surface border border-sentinel-border/50 space-y-1 font-mono text-[11px]">
+                    <div className="flex justify-between text-slate-400"><span>Evidence Confidence:</span><span className="text-sentinel-accent font-bold">{(inc.confidence * 100).toFixed(0)}%</span></div>
+                    <div className="flex justify-between text-slate-400"><span>Converged Sources:</span><span className="text-emerald-400 font-bold">{inc.events.length} Channels</span></div>
+                    <div className="flex justify-between text-slate-400"><span>Recorded Time:</span><span className="text-slate-300">{inc.createdAt}</span></div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-mono text-sm font-bold text-slate-100 group-hover:text-sentinel-accent transition-colors line-clamp-1">{inc.title}</h3>
-                  <p className="text-xs font-mono text-slate-400 mt-1">Zone: {inc.zone} &bull; {inc.location}</p>
-                </div>
-                <p className="text-xs text-slate-300 font-sans line-clamp-2 leading-relaxed">{inc.summary}</p>
-                <div className="p-2.5 rounded-lg bg-sentinel-surface border border-sentinel-border/50 space-y-1 font-mono text-[11px]">
-                  <div className="flex justify-between text-slate-400"><span>Evidence Confidence:</span><span className="text-sentinel-accent font-bold">{(inc.confidence * 100).toFixed(0)}%</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Converged Sources:</span><span className="text-emerald-400 font-bold">{inc.events.length} Channels</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Recorded Time:</span><span className="text-slate-300">{inc.createdAt}</span></div>
+                <div className="mt-4 pt-3 border-t border-sentinel-border/60 flex items-center justify-between relative">
+                  <span className="text-[10px] font-mono text-slate-500 uppercase">{isCurrent ? 'Current Event' : 'Historical Event'}</span>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => handleDelete(inc.id)} className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono uppercase text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors" title="Delete incident and related records">
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                    <Link to={`/incidents/${inc.id}`} className="flex items-center gap-1 text-xs font-mono font-bold text-sentinel-accent hover:text-cyan-300">
+                      <span>Open Dossier</span><ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 </div>
               </div>
-              <div className="mt-4 pt-3 border-t border-sentinel-border/60 flex items-center justify-between">
-                <span className="text-[10px] font-mono text-slate-500 uppercase">Category: {inc.category.replace('_', ' ')}</span>
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => handleDelete(inc.id)} className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono uppercase text-slate-500 hover:text-red-300 hover:bg-red-950/30 transition-colors" title="Delete incident and related records">
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
-                  <Link to={`/incidents/${inc.id}`} className="flex items-center gap-1 text-xs font-mono font-bold text-sentinel-accent hover:text-cyan-300">
-                    <span>Open Dossier</span><ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
